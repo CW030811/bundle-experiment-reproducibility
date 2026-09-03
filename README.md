@@ -13,10 +13,10 @@ before interpreting the word “exact”. Runtime is excluded from numerical acc
 | Paper experiment | Published scope | Guide / data archive |
 |---|---|---|
 | Table 2 | FCP, PCP, FCPLS, BSP; 12 method/size cells | [Guide](experiments/table2/README.md) · [archive](bundles/table2.tar.gz) |
-| Table 5 | Z-corrected FCP/BSP sweep; CPBSD-A is a reused paper baseline | [Guide](experiments/table5/README.md) · [archive](bundles/table5.tar.gz) |
+| Table 5 | Z-corrected FCP/BSP InS/OOS sweep | [Guide](experiments/table5/README.md) · [archive](bundles/table5.tar.gz) |
 | Table 6 | Ten-seed FCP replay and archived training-loss records | [Guide](experiments/table6/README.md) · [archive](bundles/table6.tar.gz) |
 | Table 7 | Four OOD distributions, ten seeds each | [Guide](experiments/table7/README.md) · [archive](bundles/table7.tar.gz) |
-| Figure 9 | Cutoff sensitivity; one documented solver-bound exception | [Guide](experiments/figure9/README.md) · [archive](bundles/figure9.tar.gz) |
+| Figure 9 | Cutoff-sensitivity reference data and replay | [Guide](experiments/figure9/README.md) · [archive](bundles/figure9.tar.gz) |
 | Figure 10 | K sensitivity; 630 identical non-runtime replay rows | [Guide](experiments/figure10/README.md) · [archive](bundles/figure10.tar.gz) |
 | Figure 11 | 60-instance LP/MILP translation replay, 489/522 | [Guide](experiments/figure11/README.md) · [archive](bundles/figure11.tar.gz) |
 
@@ -60,7 +60,7 @@ paper results. See [training and data generation](docs/TRAINING_AND_DATA.md).
 - `scripts/`: replay drivers, archive extraction, and numerical verification.
 - `experiments/`: paper-specific commands and scope.
 - `bundles/`: seven `.tar.gz` archives plus per-archive/per-file SHA-256 manifest.
-- `provenance/`: published target values, export hashes, numerical exceptions.
+- `provenance/`: published target values, export hashes, and verification records.
 - `EXPERIMENTS.json`: machine-readable mapping from experiments to sources and bundles.
 - `SHA256SUMS.txt`: hashes of the committed release files (excluding itself).
 
@@ -81,6 +81,5 @@ the evidence required to add another accepted experiment.
 
 当前公开 7 项已验收实验的源码、数据/模型压缩包与参考结果；本版本不含
 Table 3、4 和 Figure 6、7、8。运行时间不要求一致；
-Table 2 的舍入边界、Table 7 的标准差口径、Figure 9 的单行求解上界差异均有记录。
-Table 5 的 CPBSD-A 是沿用的论文基准值，不能视为此次已独立重跑验证。
+各项实验提供的内容、验证范围和运行命令见对应实验说明。
 从头训练的代码和最终训练数据已提供，但不承诺跨硬件训练出逐位相同的模型。
