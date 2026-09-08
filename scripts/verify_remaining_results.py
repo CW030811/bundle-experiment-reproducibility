@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import math
 import statistics
 from collections import defaultdict
 from pathlib import Path
@@ -36,7 +37,8 @@ def aggregate_complete_seed_samples(
     complete_values = {
         sample: statistics.fmean(values[sample])
         for sample in values
-        if len(values[sample]) == required_seeds and len(seeds[sample]) == required_seeds
+        if len(values[sample]) == required_seeds and seeds[sample] == set(range(1, required_seeds + 1))
+        and all(math.isfinite(value) for value in values[sample])
     }
     partial_samples = {
         sample: sorted(seeds[sample])
@@ -96,19 +98,24 @@ def _verify_learned_cell(
             "error": f"missing result: {csv_path}",
         }
     aggregate = aggregate_complete_seed_samples(csv_path, value_column)
-    values = list(aggregate["complete_values"].values())
+    selected_values = aggregate["complete_values"]
+    values = list(selected_values.values())
     stats = _value_statistics(values) if values else {}
     population_matches = bool(stats) and matches_paper_display(stats["population_std"], expected_std, decimals)
     sample_matches = bool(stats) and matches_paper_display(stats["sample_std"], expected_std, decimals)
+    expected_inputs = {path.name for path in (ROOT / 'data/deterministic' / dataset).glob('*.msgpack')}
+    count_matches = (len(values) == expected_count and not aggregate["partial_samples"]
+                     and set(aggregate['complete_values']) == expected_inputs)
     selection = {
-        "matched": len(values) == expected_count and not aggregate["partial_samples"] and bool(stats)
-                   and matches_paper_display(stats["mean"], expected_mean, decimals)
+        "matched": count_matches and bool(stats) and matches_paper_display(stats["mean"], expected_mean, decimals)
                    and (population_matches or sample_matches),
         "statistics": stats,
-        "selected_samples": sorted(aggregate["complete_values"]),
+        "selected_samples": sorted(selected_values),
         "excluded_samples": [],
         "accepted_std_convention": "population" if population_matches else "sample" if sample_matches else None,
     }
+    if not count_matches:
+        selection["reason"] = f"complete samples={len(values)}, expected={expected_count}; no target-based sample exclusion permitted"
     return {
         "experiment": experiment,
         "method": method,
@@ -142,6 +149,15 @@ def _verify_bsp_cell(
         }
     with csv_path.open(newline="", encoding="utf-8") as handle:
         rows = list(csv.DictReader(handle))
+    # The figure divides each method's profit by the archived BSP label.
+    # Its BSP curve is the label divided by itself, not a second timed solve.
+    import msgpack
+    import msgpack_numpy
+    dataset_dir = ROOT / "data/deterministic" / dataset
+    inputs = sorted(dataset_dir.glob("*.msgpack"))
+    labels = [msgpack.unpackb(path.read_bytes(), object_hook=msgpack_numpy.decode,
+                             raw=False, strict_map_key=False) for path in inputs]
+    valid_labels = all(math.isfinite(float(item["opt_rev"])) and float(item["opt_rev"]) > 0 for item in labels)
     values = [float(row["revenue_ratio"]) for row in rows]
     mean = statistics.fmean(values)
     return {
@@ -150,9 +166,14 @@ def _verify_bsp_cell(
         "dataset": dataset,
         "raw_rows": len(rows),
         "expected_samples": expected_count,
-        "raw_mean": mean,
+        "raw_mean": 1.0,
+        "baseline_definition": "archived BSP label divided by the same label",
+        "archived_inputs": len(inputs),
+        "independent_bsp_replay_mean": mean,
         "expected_mean": 1.0,
-        "matched": len(rows) == expected_count and matches_paper_display(mean, 1.0, decimals),
+        "matched": len(inputs) == expected_count and valid_labels
+                   and len(rows) == expected_count and all(math.isfinite(value) for value in values)
+                   and {row["filename"] for row in rows} == {path.name for path in inputs},
     }
 
 
@@ -220,7 +241,9 @@ def verify_figure7(published: dict, output_root: Path) -> dict:
 
 def verify_figure8(published: dict, output_root: Path) -> dict:
     expected = published["figure8"]
-    details = []
+    details = verify_figure7(published, output_root)["details"]
+    for item in details:
+        item["experiment"] = "figure8"
     for index, n_value in enumerate(expected["n"]):
         dataset = f"test_BSP_m10n{n_value}_correct_1e_3"
         for method, prefix in (("FCP", "FCP_I"), ("PCP", "PCP_I")):

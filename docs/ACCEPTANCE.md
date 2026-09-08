@@ -1,6 +1,6 @@
 # Reproduction scope and acceptance policy
 
-The local project previously called these seven entries `EXACT`. This public
+The local project calls accepted entries `EXACT`. This public
 release uses `ACCEPTED_WITH_DOCUMENTED_SCOPE` to avoid implying bitwise,
 end-to-end retraining equivalence where that was not established.
 
@@ -33,4 +33,14 @@ command does not mean it just retrained a model or solved a MILP. Actual replay
 commands are listed in each experiment guide. Training can vary across hardware
 and library builds; archived checkpoints are the reference for numerical replay.
 
-Plotting hard-coded paper arrays is not accepted as an independent experiment reproduction.
+9. Tables 3–4 check all 17/15 reported method-size cells after complete ten-seed
+   evaluation. Unreported PCP cells are not fabricated.
+10. Figure 7 checks all 12 curve points. Figure 8 checks all 20 base/BSP and
+    self-improved points with the appropriate model family for each curve.
+11. Figure 6 checks all 8 method/dataset cells: FCP and BSP at m=20, 40, 60 and
+    80, with BSP normalized by its archived label.
+
+All twelve numerical experiments have source/data/result bundles.
+`scripts/reproduce.py verify all --reference` applies these registered scopes.
+Plotting hard-coded paper arrays alone is not an independent replay;
+the unified plot command reads the selected result CSVs/JSONs.
