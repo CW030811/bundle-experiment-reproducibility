@@ -53,7 +53,9 @@ Learned deterministic results use `(seed, sample_file)` identities. Aggregate
 seeds 1–10 within each sample, then compute mean/std across samples. Table 6
 reports each seed separately. Complete expected sample identities are required.
 
-Legacy source-level CLIs remain available. The supported public interfaces
-are `reproduce.py` and `data_pipeline.py`; old generator main blocks may retain
-historical demonstration settings. The wrappers call the same algorithm
+The supported public interfaces are `reproduce.py` and `data_pipeline.py`,
+plus the multi-model evaluator commands explicitly listed in the guides.
+Other source modules are imported algorithm implementations; their historical
+standalone demonstration or invariant-model modes are not release interfaces
+and may depend on unbundled assets. The wrappers call the same algorithm
 functions with explicit paths and recipe parameters.
