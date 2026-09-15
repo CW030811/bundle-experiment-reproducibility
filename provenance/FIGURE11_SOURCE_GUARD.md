@@ -19,7 +19,7 @@ The same value is registered as
 `appendix_e_final_provenance.cached_lp_source_sha256` in
 `provenance/PUBLISHED_VALUES.json`. `scripts/verify_reference_results.py`
 checks it together with the SHA-256 of the seed-1 checkpoint
-`models_multi_layer_edge_update/best_model_edge_4layer_seed1.pt`.
+`models/appendix_e_seed1/best_model_edge_4layer_seed1.pt`.
 
 Because of this guard, both files stay byte-identical to the accepted run.
 The runner imports this module directly; it does not use older Local Search

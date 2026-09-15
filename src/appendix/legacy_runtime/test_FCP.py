@@ -406,10 +406,10 @@ def main(use_web_gcn=False, web_results_path=None):
     # Set paths using hardcoded values
     # dir_path = BASE_DIR
     _base = os.path.dirname(os.path.abspath(__file__))
-    model_path = os.path.join(_base, "models_multi_layer_edge_update", "model_edge_4layer_seed1.pt")
-    dataset_dir = os.path.join(_base, "dataset2_4_2026")
+    model_path = os.path.abspath(os.path.join(_base, "..", "..", "..", "models", "appendix_seed1", "model_edge_4layer_seed1.pt"))
+    dataset_dir = os.path.abspath(os.path.join(_base, "..", "..", "..", "data", "deterministic"))
 
-    # MB subdirs in dataset2_4_2026 (subdir structure, not flat test_data/)
+    # MB subdirs in data/deterministic (packaged Figure 9/10 inputs)
     mb_subdirs = ["test_m10n10_1e_3", "test_m20n10_1e_3", "test_m30n10_1e_3"]
     result_path = 'test_result_threshold_vs_optimal.csv'
     

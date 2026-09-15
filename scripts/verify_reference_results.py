@@ -105,7 +105,7 @@ def verify_figure11(result_root=None):
     expected = json.loads((ROOT / 'provenance/PUBLISHED_VALUES.json').read_text())['appendix_e_final_provenance']
     guard_ok = all(hashlib.sha256((ROOT / f'src/test/{name}').read_bytes()).hexdigest() == expected['cached_lp_source_sha256']
                    for name in ['test_FCPLS_score_cached_lp.py', 'test_FCPLS_score_cached_lp_1.py'])
-    model_ok = hashlib.sha256((ROOT / 'models_multi_layer_edge_update/best_model_edge_4layer_seed1.pt').read_bytes()).hexdigest() == expected['model_sha256']
+    model_ok = hashlib.sha256((ROOT / 'models/appendix_e_seed1/best_model_edge_4layer_seed1.pt').read_bytes()).hexdigest() == expected['model_sha256']
     failures = json.loads((fresh_dir / 'LP_MILP_verification_failures.json').read_text())
     return {'passed': exact and counts == (489, 522) and guard_ok and model_ok and not failures,
             'instances': len(original), 'successful': counts[0], 'accepted': counts[1],

@@ -45,8 +45,8 @@ PRIMARY_LS = CODE_ROOT / "src/test/test_FCPLS_score_cached_lp.py"
 COMPAT_LS = CODE_ROOT / "src/test/test_FCPLS_score_cached_lp_1.py"
 TEST_DIR = CODE_ROOT / "src/test"
 DATASET2_DIR = CODE_ROOT / "dataset2_4_2026"
-DATASET_DIR = CODE_ROOT / "Dataset"
-MODEL_DIR = CODE_ROOT / "models_multi_layer_edge_update"
+DATASET_DIR = CODE_ROOT / "data/appendix_e"
+MODEL_DIR = CODE_ROOT / "models/appendix_e_seed1"
 
 sys.path.insert(0, str(TEST_DIR))
 

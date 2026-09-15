@@ -6,13 +6,13 @@
   },
   "src/appendix/legacy_runtime/test_PCP.py": {
     "source_sha256": "8e0a831a8388ec20ea0d0cc16739d60d9fe7a3e7029e6cc5c499907806a1fd42",
-    "published_sha256": "8e0a831a8388ec20ea0d0cc16739d60d9fe7a3e7029e6cc5c499907806a1fd42",
-    "changed_in_public_export": false
+    "published_sha256": "8e65747e0354c5b65fe1e34897666b9bfd610720a092e90103ea28b360c2928f",
+    "changed_in_public_export": true
   },
   "src/appendix/legacy_runtime/test_FCP.py": {
     "source_sha256": "cf2ffe12210881d911639c5b9f19ef77b7b0a27963d7d525054ba52a264e5a0e",
-    "published_sha256": "cf2ffe12210881d911639c5b9f19ef77b7b0a27963d7d525054ba52a264e5a0e",
-    "changed_in_public_export": false
+    "published_sha256": "f7acabe29c952bb8bfa2d1a4dd923adb4d9b6efe5d13d0e72908889fb8f99c50",
+    "changed_in_public_export": true
   },
   "src/appendix/legacy_runtime/test_FCPLS_score.py": {
     "source_sha256": "ea135dddd77094de82e26e8145f2b07dc90f8d86d7d6fcda4ecde8e125f00620",
@@ -31,7 +31,7 @@
   },
   "src/appendix_rerun/run_guarded_sensitivity.py": {
     "source_sha256": "76b1ab90da008a6ca20b57371e1f7b11bc8f5e471bc0196cf16b60e01535ece3",
-    "published_sha256": "3688a3baab39238652820ffb36021eb7652cc781838fb50fd2387d73b4b8bca5",
+    "published_sha256": "127e8e2be3e1a1c0dee4ba948781cfed1122f8072938bc4b09377addce102dc0",
     "changed_in_public_export": true
   },
   "src/deterministic/test_BSP.py": {
@@ -231,7 +231,7 @@
   },
   "provenance/FIGURE11_SOURCE_GUARD.md": {
     "source_sha256": "33b40b0eff60fd2b3e8690767f2c8a119f16c55c088c88dd80f4210b57d50893",
-    "published_sha256": "4441b39a26cfdb6a38a6818fefd82abea503225a7543f2a0061cfe6023d1b260",
+    "published_sha256": "05b0ea81716e5915f775f28e84abc7b309e5ec37d1f438a5186c60a185767d5c",
     "changed_in_public_export": true
   },
   "provenance/TABLE2_EXACT_REPRO.md": {
@@ -317,7 +317,7 @@
   },
   "scripts/verify_reference_results.py": {
     "source_sha256": null,
-    "published_sha256": "718fadc4372d4787f8c6c973dced4840f94d55dc5ada2e3f4fa734b88ce370b8",
+    "published_sha256": "08c2a0c21ad59ca3582baf74fc96a7a17842d177e5522c246b7220f9a32970e7",
     "origin": "Public release orchestration and verification",
     "changed_in_public_export": true
   }
