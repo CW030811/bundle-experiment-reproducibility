@@ -2032,7 +2032,7 @@ def main():
             
             if dataset_results:
                 total_samples = sum(len(v) for v in dataset_results.values())
-                print(f"\n【Layer {nl}】Sample count: {total_samples}")
+                print(f"\n[Layer {nl}] Sample count: {total_samples}")
                 for (m, n_prod), results in sorted(dataset_results.items()):
                     if results:
                         results_array = np.array(results)
@@ -2063,7 +2063,7 @@ def main():
     print("\nOverall statistics:")
     for nl in layers:
         total_samples = sum(len(v) for v in results_by_layer[nl].values())
-        print(f"  【Layer {nl}】Total samples: {total_samples}")
+        print(f"  [Layer {nl}] Total samples: {total_samples}")
     print("="*80)
 
 

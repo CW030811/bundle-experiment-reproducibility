@@ -1,11 +1,11 @@
 """
-使用最新的 test_PCP_cp.py 方法生成 PCP 数据集。
+Generate the PCP dataset with the latest test_PCP_cp.py method.
 
-更新内容：
-1. 使用 PCP cutting-plane / lazy-constraint 的最新求解方法
-2. 默认使用 seed=6
-3. 输出生成所有数据的总时间
-4. 若程序被中断，输出截至中断的累计时间和已生成 data 数量
+Changes:
+1. Use the latest PCP cutting-plane / lazy-constraint solver
+2. Use seed=6 by default
+3. Report the total generation time
+4. If interrupted, report the elapsed time and the number of samples generated so far
 """
 
 from __future__ import annotations
@@ -366,36 +366,36 @@ def solve_progressive_choice_pricing_milp_cp(
 
 def prepare_output_folder(folder_path):
     if os.path.exists(folder_path):
-        print(f"\n⚠️  警告: 文件夹 '{folder_path}' 已存在！")
-        confirm = input("是否删除该文件夹？(yes/no): ").strip().lower()
+        print(f"\n⚠️  Warning: folder '{folder_path}' already exists!")
+        confirm = input("Delete this folder? (yes/no): ").strip().lower()
         if confirm in ["yes", "y"]:
             shutil.rmtree(folder_path)
-            print(f"✓ 文件夹 '{folder_path}' 删除成功。")
+            print(f"✓ Folder '{folder_path}' deleted.")
             time.sleep(1)
         else:
-            print("❌ 取消删除。程序退出。")
+            print("❌ Deletion cancelled. Exiting.")
             raise SystemExit(0)
     else:
-        print(f"文件夹 '{folder_path}' 不存在，将创建新文件夹。")
+        print(f"Folder '{folder_path}' does not exist; creating it.")
 
     os.makedirs(folder_path, exist_ok=True)
-    print(f"✓ 文件夹 '{folder_path}' 创建成功。")
+    print(f"✓ Folder '{folder_path}' created.")
 
 
 def print_generation_summary(start_time, successful_samples, interrupted=False):
     elapsed = time.time() - start_time
-    status = "程序被中断" if interrupted else "生成完成"
+    status = "Interrupted" if interrupted else "Generation complete"
     print(f"\n{'=' * 60}")
     print(f"{status}")
-    print(f"总共生成 sample 的时间: {elapsed:.2f} 秒 ({elapsed / 60:.2f} 分钟)")
-    print(f"成功生成 sample 数量: {successful_samples}")
+    print(f"Total sample generation time: {elapsed:.2f} s ({elapsed / 60:.2f} min)")
+    print(f"Samples generated successfully: {successful_samples}")
     print(f"{'=' * 60}")
 
 
 def generate_sample(m, l, u, sample_num, folder_path, model_path, device, threshold=0.5):
-    print(f"\n加载训练好的模型: {model_path}")
+    print(f"\nLoading trained model: {model_path}")
     if not os.path.exists(model_path):
-        print(f"模型文件不存在: {model_path}")
+        print(f"Model file does not exist: {model_path}")
         return 0
 
     import __main__
@@ -403,18 +403,18 @@ def generate_sample(m, l, u, sample_num, folder_path, model_path, device, thresh
     model = torch.load(model_path, map_location=device, weights_only=False)
     model.to(device)
     model.eval()
-    print("模型加载成功")
+    print("Model loaded")
 
     prepare_output_folder(folder_path)
 
-    print(f"\n开始生成 {sample_num} 个 PCP 样本...")
-    print(f"参数: m={m}, n范围=[{l}, {u}), threshold={threshold}")
+    print(f"\nGenerating {sample_num} PCP samples...")
+    print(f"Parameters: m={m}, n range=[{l}, {u}), threshold={threshold}")
 
     successful_samples = 0
     generation_start = time.time()
 
     try:
-        for iter_idx in tqdm(range(sample_num), desc="生成样本"):
+        for iter_idx in tqdm(range(sample_num), desc="Generating samples"):
             n = np.random.randint(l, u)
             unit_cs = np.random.rand(1, n)
             ship_cs = np.random.rand(m, 1)
@@ -436,7 +436,7 @@ def generate_sample(m, l, u, sample_num, folder_path, model_path, device, thresh
             except KeyboardInterrupt:
                 raise
             except Exception as e:
-                print(f"\nSample {iter_idx + 1}: GCN 推理失败: {e}")
+                print(f"\nSample {iter_idx + 1}: GCN inference failed: {e}")
                 continue
 
             try:
@@ -456,11 +456,11 @@ def generate_sample(m, l, u, sample_num, folder_path, model_path, device, thresh
             except KeyboardInterrupt:
                 raise
             except Exception as e:
-                print(f"\nSample {iter_idx + 1}: MILP 求解失败: {e}")
+                print(f"\nSample {iter_idx + 1}: MILP solve failed: {e}")
                 continue
 
             if not feasible:
-                print(f"\nSample {iter_idx + 1}: 无可行解，跳过保存")
+                print(f"\nSample {iter_idx + 1}: no feasible solution; not saved")
                 continue
 
             data_to_pack = {
@@ -516,7 +516,7 @@ if __name__ == "__main__":
         "--folder_name",
         type=str,
         default="train_PCP_m10n50_correct_4layer_seed9_lr3",
-        help="输出文件夹名称，位置固定在项目根目录下的 results/generated/ 中。",
+        help="Output folder name, always created under results/generated/ in the repository root.",
     )
     args = parser.parse_args()
 
@@ -546,16 +546,16 @@ if __name__ == "__main__":
             break
 
     if model_path is None:
-        print("未找到模型文件！搜索路径：")
+        print("Model file not found! Searched paths:")
         for path in model_candidates:
             print(f"  - {path}")
         raise SystemExit(1)
 
-    print(f"找到模型: {model_path}")
+    print(f"Found model: {model_path}")
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"使用设备: {device}")
-    print(f"默认 seed: {seed}")
+    print(f"Device: {device}")
+    print(f"Default seed: {seed}")
 
     try:
         generate_sample(
@@ -569,4 +569,4 @@ if __name__ == "__main__":
             threshold,
         )
     except KeyboardInterrupt:
-        print("已停止生成。")
+        print("Generation stopped.")

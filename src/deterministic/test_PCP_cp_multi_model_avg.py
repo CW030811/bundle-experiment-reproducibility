@@ -1,9 +1,9 @@
 """
-基于最新版 test_PCP_cp 的多模型评估脚本：
-- 支持指定层数和种子列表
-- 对每个样本：每个模型独立推理 + 最新 PCP-cp MILP，最终对该样本的 revenue/time 取平均
-- 支持向 PCP-cp 传入 FCP fallback time limit
-- 模型默认从 models_multi_layer_edge_update 目录加载
+Multi-model evaluation script based on the latest test_PCP_cp:
+- Supports configurable layer counts and seed lists
+- For each sample: independent inference plus the latest PCP-cp MILP per model, then average revenue/time
+- Passes an FCP fallback time limit to PCP-cp
+- Loads models from --model_dir
 """
 
 from __future__ import annotations
@@ -17,7 +17,7 @@ import numpy as np
 import torch
 from tqdm import tqdm
 
-# 复用 test_PCP_cp 中的模型结构和流程
+# Reuse the model and pipeline from test_PCP_cp
 from test_PCP_cp import (
     EdgeScoringGCN,
     process_data,
@@ -36,12 +36,12 @@ def parse_list_arg(arg: str) -> List[int]:
 
 
 def parse_paths_arg(arg: str) -> List[str]:
-    """将分号分隔的路径字符串解析为列表."""
+    """Parse a semicolon-separated path string into a list."""
     return [p.strip() for p in arg.split(";") if p.strip()]
 
 
 def _save_layer_result(nl: int, m: int, n: int, results_list: list, result_dir: str, test_folder_name: str = None) -> None:
-    """保存单个层级和问题规模的结果到 CSV 文件."""
+    """Save results for one layer count and problem size to CSV."""
     import pandas as pd
 
     results_array = np.array(results_list)
@@ -64,12 +64,12 @@ def _save_layer_result(nl: int, m: int, n: int, results_list: list, result_dir: 
         'avg_gcn_time': results_array[:, 4],
     })
     df.to_csv(result_path, index=False)
-    print(f"✅ 已保存: {result_path} ({len(results_array)} samples)")
+    print(f"✅ Saved: {result_path} ({len(results_array)} samples)")
 
 
 def _save_seed_averages(nl: int, m: int, n: int, seed_results: dict, result_dir: str, test_folder_name: str = None) -> None:
     """
-    保存每个seed对所有数据的平均结果到 CSV 文件.
+    Save each seed's average over all samples to CSV.
     """
     import pandas as pd
 
@@ -105,11 +105,11 @@ def _save_seed_averages(nl: int, m: int, n: int, seed_results: dict, result_dir:
     df.insert(3, 'n_products', n)
 
     df.to_csv(result_path, index=False)
-    print(f"✅ 已保存每个seed平均结果: {result_path} ({len(seed_avg_data)} seeds)")
+    print(f"✅ Saved per-seed averages: {result_path} ({len(seed_avg_data)} seeds)")
 
 
 def _save_seed_sample_results(rows: list, result_dir: str, test_folder_name: str) -> str | None:
-    """保存每个 seed 、每个样本的可审计长表。"""
+    """Save the auditable seed-by-sample long table."""
     if not rows:
         return None
 
@@ -122,7 +122,7 @@ def _save_seed_sample_results(rows: list, result_dir: str, test_folder_name: str
     result_filename = f"test_result_PCP_cp_{rows[0]['layers']}layer_{test_folder_name}_seed_sample.csv"
     result_path = os.path.join(result_dir, result_filename)
     pd.DataFrame(rows, columns=columns).to_csv(result_path, index=False)
-    print(f"✅ 已保存 seed×sample 长表: {result_path} ({len(rows)} rows)")
+    print(f"✅ Saved seed×sample long table: {result_path} ({len(rows)} rows)")
     return result_path
 
 
@@ -132,7 +132,7 @@ def load_models(
     seeds: List[int],
     device: torch.device,
 ) -> dict:
-    """加载指定层数和种子的模型集合。返回 {layer: [(seed, model, path), ...]}."""
+    """Load models for the requested layers and seeds. Returns {layer: [(seed, model, path), ...]}."""
     loaded = {nl: [] for nl in layers}
     for nl in layers:
         for sd in seeds:
@@ -143,7 +143,7 @@ def load_models(
             ]
             path = next((p for p in cand_paths if os.path.exists(p)), None)
             if path is None:
-                print(f"⚠️ 未找到模型: layer={nl}, seed={sd}, searched={cand_paths}")
+                print(f"⚠️ Model not found: layer={nl}, seed={sd}, searched={cand_paths}")
                 continue
             try:
                 import __main__
@@ -152,14 +152,14 @@ def load_models(
                 mdl.to(device)
                 mdl.eval()
                 loaded[nl].append((sd, mdl, path))
-                print(f"✅ 已加载模型: layer={nl}, seed={sd}, path={path}")
+                print(f"✅ Loaded model: layer={nl}, seed={sd}, path={path}")
             except Exception as e:
-                print(f"❌ 加载失败 layer={nl}, seed={sd}, path={path}: {e}")
+                print(f"❌ Failed to load layer={nl}, seed={sd}, path={path}: {e}")
     return loaded
 
 
 def run_inference_only(mdl, data, n, m_segments):
-    """单模型 GNN inference wall-clock，并返回 sigmoid 输出."""
+    """Single-model GNN inference (wall-clock timed); returns sigmoid outputs."""
     inference_start = time.time()
     with torch.no_grad():
         raw_out = mdl(data)
@@ -193,7 +193,7 @@ def process_and_solve_milp(
     stored_Rs,
     fcp_fallback_time_limit,
 ):
-    """处理推理结果并求解最新版 cutting-plane / lazy-cut PCP MILP."""
+    """Process inference output and solve the latest cutting-plane / lazy-cut PCP MILP."""
     selected_products = top_m_selection(sigmoid_output, m=n, threshold=0.5)
     feasible_bundles = generate_progressive_bundles(selected_products, n)
 
@@ -215,20 +215,20 @@ def process_and_solve_milp(
 
 
 def main():
-    parser = argparse.ArgumentParser(description="多模型平均评估（基于 test_PCP_cp）")
+    parser = argparse.ArgumentParser(description="Multi-model average evaluation (based on test_PCP_cp)")
     parser.add_argument("--data_dir", type=str, default=os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
-    parser.add_argument("--test_subdirs", type=str, default="data/deterministic/test_m10n10_correct_1e_3;data/deterministic/test_m20n10_correct_1e_3;data/deterministic/test_m30n10_correct_1e_3", help="测试数据子目录（多个用分号分隔）")
-    parser.add_argument("--model_dir", type=str, default="models/main_base_4layer_correct_lr_3", help="模型目录")
-    parser.add_argument("--layers", type=str, default="4", help="要使用的层数列表, 逗号分隔")
-    parser.add_argument("--seeds", type=str, default="1,2,3,4,5,6,7,8,9,10", help="要使用的seed列表, 逗号分隔")
-    parser.add_argument("--result_dir", type=str, default="results/pcp", help="结果保存目录")
+    parser.add_argument("--test_subdirs", type=str, default="data/deterministic/test_m10n10_correct_1e_3;data/deterministic/test_m20n10_correct_1e_3;data/deterministic/test_m30n10_correct_1e_3", help="Test data subdirectories (semicolon separated)")
+    parser.add_argument("--model_dir", type=str, default="models/main_base_4layer_correct_lr_3", help="Model directory")
+    parser.add_argument("--layers", type=str, default="4", help="Layer counts to use, comma separated")
+    parser.add_argument("--seeds", type=str, default="1,2,3,4,5,6,7,8,9,10", help="Seeds to use, comma separated")
+    parser.add_argument("--result_dir", type=str, default="results/pcp", help="Output directory")
     
-    parser.add_argument("--fcp_fallback_time_limit", type=float, default=60.0, help="PCP-cp 无 feasible 解时，FCP fallback 的 time limit（秒）")
+    parser.add_argument("--fcp_fallback_time_limit", type=float, default=60.0, help="Time limit (seconds) for the FCP fallback when PCP-cp finds no feasible solution")
     parser.add_argument(
         "--save_result",
         action=argparse.BooleanOptionalAction,
         default=True,
-        help="是否保存结果文件",
+        help="Whether to save result files",
     )
     args = parser.parse_args()
 
@@ -252,15 +252,15 @@ def main():
     if save_result:
         print(f"💾 result_dir: {result_dir}")
     else:
-        print("💾 不保存结果文件")
+        print("💾 Result files will not be saved")
     print(f"⏱ FCP fallback time limit: {args.fcp_fallback_time_limit}s")
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"设备: {device}")
+    print(f"Device: {device}")
 
     models_by_layer = load_models(model_root, layers, seeds, device)
     if not any(models_by_layer.values()):
-        print("未加载到任何模型，退出。")
+        print("No models loaded; exiting.")
         return
 
     for test_subdir in test_subdirs:
@@ -270,7 +270,7 @@ def main():
         test_data_path = os.path.join(dir_path, test_subdir)
 
         if not os.path.exists(test_data_path):
-            print(f"⚠️ 测试数据路径不存在: {test_data_path}，跳过")
+            print(f"⚠️ Test data path does not exist: {test_data_path}; skipping")
             continue
 
         dir_list = os.listdir(test_data_path)
@@ -278,7 +278,7 @@ def main():
         misc_dataset = []
         file_names = []
 
-        print(f"\n📊 开始读取测试集: {test_subdir}")
+        print(f"\n📊 Reading test set: {test_subdir}")
         for fname in dir_list:
             if fname == ".DS_Store":
                 continue
@@ -289,11 +289,11 @@ def main():
                 misc_dataset.append(misc)
                 file_names.append(fname)
             except Exception as e:
-                print(f"读取 {fname} 失败: {e}")
+                print(f"Failed to read {fname}: {e}")
                 continue
 
         sample_num = len(test_dataset)
-        print(f"✅ 共加载 {sample_num} 条样本")
+        print(f"✅ Loaded {sample_num} samples")
         if sample_num == 0:
             continue
 
@@ -345,7 +345,7 @@ def main():
                             })
 
                         except Exception as e_model:
-                            print(f"模型失败 sample={file_names[i] if i < len(file_names) else i}, layer={nl}, seed={sd}, path={path}: {e_model}")
+                            print(f"Model failed sample={file_names[i] if i < len(file_names) else i}, layer={nl}, seed={sd}, path={path}: {e_model}")
                             continue
 
                     if len(model_ratios) > 0:
@@ -362,13 +362,13 @@ def main():
                         ]
                         results_by_layer[nl][key].append(result_entry)
             except Exception as e:
-                print(f"样本 {file_names[i] if i < len(file_names) else i} 评估失败: {e}")
+                print(f"Sample {file_names[i] if i < len(file_names) else i} evaluation failed: {e}")
                 continue
 
         test_folder_name = os.path.basename(test_subdir.rstrip('/'))
 
         if save_result:
-            print(f"\n💾 保存 {test_folder_name} 的结果...")
+            print(f"\n💾 Saving results for {test_folder_name}...")
             for nl in layers:
                 for key, results in results_by_layer[nl].items():
                     if results:
@@ -382,12 +382,12 @@ def main():
                         _save_seed_sample_results(seed_sample_rows_by_layer[nl], result_dir, test_folder_name)
 
         print(f"\n{'='*80}")
-        print(f"📊 {test_folder_name} 评估结果")
+        print(f"📊 {test_folder_name} evaluation results")
         print(f"{'='*80}")
         for nl in layers:
             if results_by_layer[nl]:
                 total_samples = sum(len(v) for v in results_by_layer[nl].values())
-                print(f"\n【Layer {nl}】样本数: {total_samples}")
+                print(f"\n[Layer {nl}] Samples: {total_samples}")
                 for (m, n), results in sorted(results_by_layer[nl].items()):
                     if results:
                         results_array = np.array(results)
@@ -400,15 +400,15 @@ def main():
         print(f"{'='*80}\n")
 
     print("\n" + "="*80)
-    print("🎉 所有数据集评估完成！")
+    print("🎉 All datasets evaluated!")
     print("="*80)
-    print(f"测试数据集数: {len(test_subdirs)}")
-    print(f"层数: {layers}")
-    print(f"每层模型数: {len(seeds)}")
+    print(f"Test datasets: {len(test_subdirs)}")
+    print(f"Layers: {layers}")
+    print(f"Models per layer count: {len(seeds)}")
     if save_result:
-        print(f"结果保存目录: {result_dir}")
+        print(f"Output directory: {result_dir}")
     else:
-        print("结果文件: 未保存")
+        print("Result files: not saved")
     print("="*80)
 
 

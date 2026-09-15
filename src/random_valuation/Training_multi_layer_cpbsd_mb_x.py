@@ -393,13 +393,13 @@ def train(
     if not train_data or not val_data:
         raise RuntimeError("Training or validation split is empty after loading CPBSD MB labeled data.")
 
-    print(f"📦 总计加载 {len(dataset)} 个样本")
+    print(f"📦 Loaded {len(dataset)} samples in total")
     pos_rate = float(np.mean(np.concatenate([(d.edge_label.numpy() > 0.5).astype(float) for d in dataset])))
-    print(f"📈 全局正边比例(x_kn=1): {pos_rate:.6f}")
-    print(f"  训练集: {len(train_data)}")
-    print(f"  验证集: {len(val_data)}")
+    print(f"📈 Global positive-edge rate (x_kn=1): {pos_rate:.6f}")
+    print(f"  Train: {len(train_data)}")
+    print(f"  Validation: {len(val_data)}")
     if test_data:
-        print(f"  测试集: {len(test_data)}")
+        print(f"  Test: {len(test_data)}")
 
     train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_data, batch_size=batch_size, shuffle=False) if val_data else None
@@ -416,7 +416,7 @@ def train(
     raw_pos_rate = float(np.mean(np.concatenate([(d.edge_label.numpy() > 0.5).astype(float) for d in train_data])))
     raw_pos_rate = min(max(raw_pos_rate, 1e-6), 1 - 1e-6)
     pos_weight = (1.0 - raw_pos_rate) / raw_pos_rate
-    print(f"⚖️ 训练集正边比例(x_kn=1): {raw_pos_rate:.6f}, pos_weight={pos_weight:.3f}")
+    print(f"⚖️ Training positive-edge rate (x_kn=1): {raw_pos_rate:.6f}, pos_weight={pos_weight:.3f}")
 
     criterion = nn.BCEWithLogitsLoss(pos_weight=torch.tensor(pos_weight, dtype=torch.float, device=device))
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
@@ -479,7 +479,7 @@ def train(
     val_hist: List[Tuple[int, float]] = []
     metrics = []
 
-    print(f"\n开始训练 {epochs} 轮...")
+    print(f"\nStarting training for {epochs} epochs...")
     for epoch in range(epochs):
         model.train()
         total_train = 0.0
@@ -521,11 +521,11 @@ def train(
                 model_cpu = model.cpu()
                 torch.save(model_cpu, best_model_path)
                 model = model_cpu.to(device)
-                print(f"  🎯 新最佳模型：val_loss={avg_val:.6f}, val_f1={avg_val_f1:.6f} (epoch={epoch})")
+                print(f"  🎯 New best model: val_loss={avg_val:.6f}, val_f1={avg_val_f1:.6f} (epoch={epoch})")
             else:
                 patience += 1
                 if patience >= early_stopping_patience:
-                    print(f"  ⏹️ 触发早停（连续 {early_stopping_patience} 轮无改进）")
+                    print(f"  ⏹️ Early stopping ({early_stopping_patience} epochs without improvement)")
                     break
 
         metrics.append(
@@ -665,10 +665,10 @@ def train(
     writer.flush()
     writer.close()
 
-    print("\n✅ 训练完成！")
-    print(f"  最终模型: {final_model_path}")
-    print(f"  指标文件: {metrics_path}")
-    print(f"  曲线图: {fig_path}")
+    print("\n✅ Training complete!")
+    print(f"  Final model: {final_model_path}")
+    print(f"  Metrics file: {metrics_path}")
+    print(f"  Curves: {fig_path}")
 
     return model, train_hist_np, val_hist_np
 

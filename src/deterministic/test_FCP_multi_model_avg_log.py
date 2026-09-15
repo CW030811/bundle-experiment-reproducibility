@@ -1,8 +1,8 @@
 """
-基于 test_FCP 的多模型评估脚本：
-- 支持指定层数（如 2/3/4）和种子列表（默认 1-10），加载对应训练好的模型
-- 对每个样本：逐模型独立推理并 MILP 求解，再对该样本的 revenue/time 取平均
-- 模型路径默认使用新的多层训练输出目录 models_multi_layer_edge_update
+Multi-model evaluation script based on test_FCP:
+- Loads trained models for the requested layer counts (e.g. 2/3/4) and seed list (default 1-10)
+- For each sample: run inference and the MILP independently per model, then average revenue/time over models
+- Loads models from --model_dir
 """
 
 from __future__ import annotations
@@ -15,38 +15,38 @@ import numpy as np
 import torch
 from tqdm import tqdm
 
-# 复用 test_FCP 中的模型结构与数据处理 / MILP 求解
+# Reuse the model, data processing and MILP solver from test_FCP
 from test_FCP_log import EdgeScoringGCN, process_data, revenue_ratio
 
-# 安全加载 EdgeScoringGCN
+# Register EdgeScoringGCN for checkpoint loading
 if hasattr(torch.serialization, "add_safe_globals"):
     torch.serialization.add_safe_globals([EdgeScoringGCN])
 
 
 def parse_list_arg(arg: str) -> List[int]:
-    """将逗号分隔的整数字符串解析为列表."""
+    """Parse a comma-separated integer string into a list."""
     return [int(x) for x in arg.split(",") if x.strip()]
 
 
 def parse_paths_arg(arg: str) -> List[str]:
-    """将分号分隔的路径字符串解析为列表."""
+    """Parse a semicolon-separated path string into a list."""
     return [p.strip() for p in arg.split(";") if p.strip()]
 
 
 def _save_layer_result(nl: int, m: int, n: int, results_list: list, result_dir: str, test_folder_name: str = None) -> None:
-    """保存单个层级和问题规模的结果到 CSV 文件."""
+    """Save results for one layer count and problem size to CSV."""
     import pandas as pd
     
     results_array = np.array(results_list)
     
-    # 文件名: test_result_FCP_Nlayer_{test_folder_name}.csv 或 test_result_FCP_Nlayer_m{m}n{n}.csv
+    # File name: test_result_FCP_Nlayer_{test_folder_name}.csv or test_result_FCP_Nlayer_m{m}n{n}.csv
     if test_folder_name:
         result_filename = f"test_result_FCP_{nl}layer_{test_folder_name}.csv"
     else:
         result_filename = f"test_result_FCP_{nl}layer_m{m}n{n}.csv"
     result_path = os.path.join(result_dir, result_filename)
     
-    # 记录详细信息 - 使用 pd.DataFrame 来避免 format specifier 问题
+    # Record details with pd.DataFrame to avoid format-specifier issues
     df = pd.DataFrame({
         'method': 'FCP',
         'layers': nl,
@@ -59,24 +59,24 @@ def _save_layer_result(nl: int, m: int, n: int, results_list: list, result_dir: 
         'avg_gcn_time': results_array[:, 4],
     })
     df.to_csv(result_path, index=False)
-    print(f"✅ 已保存: {result_path} ({len(results_array)} samples)")
+    print(f"✅ Saved: {result_path} ({len(results_array)} samples)")
 
 
 def _save_seed_averages(nl: int, m: int, n: int, seed_results: dict, result_dir: str, test_folder_name: str = None) -> None:
     """
-    保存每个seed对所有数据的平均结果到 CSV 文件.
+    Save each seed's average over all samples to CSV.
     
     Args:
-        nl: 层数
-        m: 段数
-        n: 产品数
+        nl: number of layers
+        m: number of segments
+        n: number of products
         seed_results: {seed: [(revenue_ratio, time_ratio, total_time, solve_time, gcn_time), ...]}
-        result_dir: 结果保存目录
-        test_folder_name: 测试文件夹名称
+        result_dir: output directory
+        test_folder_name: test folder name
     """
     import pandas as pd
     
-    # 计算每个seed的平均值
+    # Average per seed
     seed_avg_data = []
     for seed, results in sorted(seed_results.items()):
         if len(results) > 0:
@@ -96,28 +96,28 @@ def _save_seed_averages(nl: int, m: int, n: int, seed_results: dict, result_dir:
     if not seed_avg_data:
         return
     
-    # 文件名: test_result_FCP_Nlayer_{test_folder_name}_seed_avg.csv
+    # File name: test_result_FCP_Nlayer_{test_folder_name}_seed_avg.csv
     if test_folder_name:
         result_filename = f"test_result_FCP_{nl}layer_{test_folder_name}_seed_avg.csv"
     else:
         result_filename = f"test_result_FCP_{nl}layer_m{m}n{n}_seed_avg.csv"
     result_path = os.path.join(result_dir, result_filename)
     
-    # 创建DataFrame并保存
+    # Build and save the DataFrame
     df = pd.DataFrame(seed_avg_data)
     
-    # 添加元数据列
+    # Add metadata columns
     df.insert(0, 'method', 'FCP')
     df.insert(1, 'layers', nl)
     df.insert(2, 'm_segments', m)
     df.insert(3, 'n_products', n)
     
     df.to_csv(result_path, index=False)
-    print(f"✅ 已保存每个seed平均结果: {result_path} ({len(seed_avg_data)} seeds)")
+    print(f"✅ Saved per-seed averages: {result_path} ({len(seed_avg_data)} seeds)")
 
 
 def _save_seed_sample_results(rows: list, result_dir: str, test_folder_name: str) -> str | None:
-    """保存每个 seed 、每个样本的可审计长表。"""
+    """Save the auditable seed-by-sample long table."""
     if not rows:
         return None
 
@@ -130,7 +130,7 @@ def _save_seed_sample_results(rows: list, result_dir: str, test_folder_name: str
     result_filename = f"test_result_FCP_{rows[0]['layers']}layer_{test_folder_name}_seed_sample.csv"
     result_path = os.path.join(result_dir, result_filename)
     pd.DataFrame(rows, columns=columns).to_csv(result_path, index=False)
-    print(f"✅ 已保存 seed×sample 长表: {result_path} ({len(rows)} rows)")
+    print(f"✅ Saved seed×sample long table: {result_path} ({len(rows)} rows)")
     return result_path
 
 
@@ -140,7 +140,7 @@ def load_models(
     seeds: List[int],
     device: torch.device,
 ) -> dict:
-    """加载指定层数和种子的模型集合。返回 {layer: [(seed, model, path), ...]}."""
+    """Load models for the requested layers and seeds. Returns {layer: [(seed, model, path), ...]}."""
     loaded = {nl: [] for nl in layers}
     for nl in layers:
         for sd in seeds:
@@ -151,7 +151,7 @@ def load_models(
             ]
             path = next((p for p in cand_paths if os.path.exists(p)), None)
             if path is None:
-                print(f"⚠️ 未找到模型: layer={nl}, seed={sd}, searched={cand_paths}")
+                print(f"⚠️ Model not found: layer={nl}, seed={sd}, searched={cand_paths}")
                 continue
             try:
                 import __main__
@@ -160,14 +160,14 @@ def load_models(
                 mdl.to(device)
                 mdl.eval()
                 loaded[nl].append((sd, mdl, path))
-                print(f"✅ 已加载模型: layer={nl}, seed={sd}, path={path}")
+                print(f"✅ Loaded model: layer={nl}, seed={sd}, path={path}")
             except Exception as e:
-                print(f"❌ 加载失败 layer={nl}, seed={sd}, path={path}: {e}")
+                print(f"❌ Failed to load layer={nl}, seed={sd}, path={path}: {e}")
     return loaded
 
 
 def run_one_model(mdl, data, n, m_segments):
-    """单模型推理 + 阈值 -> 二值组合."""
+    """Single-model inference plus threshold -> binary assortment."""
     with torch.no_grad():
         raw_out = mdl(data)
         if isinstance(raw_out, dict):
@@ -186,15 +186,15 @@ def run_one_model(mdl, data, n, m_segments):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="多模型平均评估（基于 test_FCP）")
+    parser = argparse.ArgumentParser(description="Multi-model average evaluation (based on test_FCP)")
     parser.add_argument("--data_dir", type=str, default=os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
     parser.add_argument("--test_subdirs", type=str, default="data/ood/test_m10n10_log_correct_1e_3/;", 
-                        help="测试数据子目录（多个用分号分隔）")
+                        help="Test data subdirectories (semicolon separated)")
     parser.add_argument("--model_dir", type=str, default="models/main_base_4layer_correct_lr_3")
-    parser.add_argument("--layers", type=str, default="4", help="要使用的层数列表, 逗号分隔")
-    parser.add_argument("--seeds", type=str, default="1,2,3,4,5,6,7,8,9,10", help="要使用的seed列表, 逗号分隔")
-    parser.add_argument("--result_dir", type=str, default="results/ood", help="结果保存目录")
-    parser.add_argument("--save_result", type=bool, default=True, help="是否保存结果文件")
+    parser.add_argument("--layers", type=str, default="4", help="Layer counts to use, comma separated")
+    parser.add_argument("--seeds", type=str, default="1,2,3,4,5,6,7,8,9,10", help="Seeds to use, comma separated")
+    parser.add_argument("--result_dir", type=str, default="results/ood", help="Output directory")
+    parser.add_argument("--save_result", type=bool, default=True, help="Whether to save result files")
     args = parser.parse_args()
 
     dir_path = args.data_dir
@@ -205,7 +205,7 @@ def main():
     layers = parse_list_arg(args.layers)
     seeds = parse_list_arg(args.seeds)
 
-    # 创建结果目录
+    # Create the output directory
     if args.save_result:
         os.makedirs(result_dir, exist_ok=True)
 
@@ -217,32 +217,32 @@ def main():
     if args.save_result:
         print(f"💾 result_dir: {result_dir}")
     else:
-        print(f"💾 不保存结果文件")
+        print(f"💾 Result files will not be saved")
 
-    # 设备
+    # Device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"设备: {device}")
+    print(f"Device: {device}")
 
-    # 加载模型（按层组织）
+    # Load models grouped by layer count
     models_by_layer = load_models(model_root, layers, seeds, device)
     if not any(models_by_layer.values()):
-        print("未加载到任何模型，退出。")
+        print("No models loaded; exiting.")
         return
 
-    # 逐个数据集测试
+    # Evaluate each dataset
     for test_subdir in test_subdirs:
-        # 为每个数据集单独创建结果存储（避免累积）
-        # 结构: {layer: {(m, n): [(revenue_ratio, time_ratio, total_time, solve_time, gcn_time), ...]}}
+        # Separate result storage per dataset (avoid accumulation)
+        # Structure: {layer: {(m, n): [(revenue_ratio, time_ratio, total_time, solve_time, gcn_time), ...]}}
         results_by_layer = {nl: {} for nl in layers}
         
-        # 按层和seed存储结果（每个seed单独的结果）
-        # 结构: {layer: {seed: {(m, n): [(revenue_ratio, time_ratio, total_time, solve_time, gcn_time), ...]}}}
+        # Results by layer and seed (one entry per seed)
+        # Structure: {layer: {seed: {(m, n): [(revenue_ratio, time_ratio, total_time, solve_time, gcn_time), ...]}}}
         results_by_seed = {nl: {sd: {} for sd, _, _ in models_by_layer[nl]} for nl in layers}
         seed_sample_rows_by_layer = {nl: [] for nl in layers}
         test_data_path = os.path.join(dir_path, test_subdir)
         
         if not os.path.exists(test_data_path):
-            print(f"⚠️ 测试数据路径不存在: {test_data_path}，跳过")
+            print(f"⚠️ Test data path does not exist: {test_data_path}; skipping")
             continue
 
         dir_list = os.listdir(test_data_path)
@@ -250,7 +250,7 @@ def main():
         misc_dataset = []
         file_names = []
 
-        print(f"\n📊 开始读取测试集: {test_subdir}")
+        print(f"\n📊 Reading test set: {test_subdir}")
         for fname in dir_list:
             if fname == ".DS_Store":
                 continue
@@ -261,11 +261,11 @@ def main():
                 misc_dataset.append(misc)
                 file_names.append(fname)
             except Exception as e:
-                print(f"读取 {fname} 失败: {e}")
+                print(f"Failed to read {fname}: {e}")
                 continue
 
         sample_num = len(test_dataset)
-        print(f"✅ 共加载 {sample_num} 条样本")
+        print(f"✅ Loaded {sample_num} samples")
         if sample_num == 0:
             continue
 
@@ -275,7 +275,7 @@ def main():
                 misc = misc_dataset[i]
                 n, m_segments, unit_cs, ship_cs, unit_us, Ns, opt_bundles, opt_prices, opt_rev, running_time, gap = misc
                 
-                # 对每一层，使用该层的所有seed进行推理
+                # For each layer count, run inference with all of its seeds
                 for nl in layers:
                     if nl not in models_by_layer or not models_by_layer[nl]:
                         continue
@@ -302,7 +302,7 @@ def main():
                             model_solve_times.append(solve_time)
                             model_gcn_times.append(gcn_time)
                             
-                            # 记录每个seed的单独结果
+                            # Record the per-seed result
                             key = (m_segments, n)
                             if key not in results_by_seed[nl][sd]:
                                 results_by_seed[nl][sd][key] = []
@@ -316,7 +316,7 @@ def main():
                             })
                             
                         except Exception as e_model:
-                            print(f"模型失败 sample={file_names[i] if i < len(file_names) else i}, layer={nl}, seed={sd}, path={path}: {e_model}")
+                            print(f"Model failed sample={file_names[i] if i < len(file_names) else i}, layer={nl}, seed={sd}, path={path}: {e_model}")
                             continue
 
                     if len(model_ratios) > 0:
@@ -333,21 +333,21 @@ def main():
                         ]
                         results_by_layer[nl][key].append(result_entry)
             except Exception as e:
-                print(f"样本 {file_names[i] if i < len(file_names) else i} 评估失败: {e}")
+                print(f"Sample {file_names[i] if i < len(file_names) else i} evaluation failed: {e}")
                 continue
 
-        # 本数据集处理完后，保存结果
+        # Save results after finishing this dataset
         test_folder_name = os.path.basename(test_subdir.rstrip('/'))
         if args.save_result:
-            print(f"\n💾 保存 {test_folder_name} 的结果...")
+            print(f"\n💾 Saving results for {test_folder_name}...")
             for nl in layers:
                 for key, results in results_by_layer[nl].items():
                     if results:
                         m, n = key
-                        # 保存样本级别的平均结果
+                        # Save sample-level averages
                         _save_layer_result(nl, m, n, results, result_dir, test_folder_name)
                         
-                        # 保存每个seed的平均结果
+                        # Save per-seed averages
                         seed_results_for_key = {
                             sd: results_by_seed[nl][sd].get(key, [])
                             for sd in results_by_seed[nl].keys()
@@ -355,14 +355,14 @@ def main():
                         _save_seed_averages(nl, m, n, seed_results_for_key, result_dir, test_folder_name)
                         _save_seed_sample_results(seed_sample_rows_by_layer[nl], result_dir, test_folder_name)
         
-        # 打印当前数据集的统计结果
+        # Print statistics for this dataset
         print(f"\n{'='*80}")
-        print(f"📊 {test_folder_name} 评估结果")
+        print(f"📊 {test_folder_name} evaluation results")
         print(f"{'='*80}")
         for nl in layers:
             if results_by_layer[nl]:
                 total_samples = sum(len(v) for v in results_by_layer[nl].values())
-                print(f"\n【Layer {nl}】样本数: {total_samples}")
+                print(f"\n[Layer {nl}] Samples: {total_samples}")
                 for (m, n), results in sorted(results_by_layer[nl].items()):
                     if results:
                         results_array = np.array(results)
@@ -374,17 +374,17 @@ def main():
                         print(f"    Avg Times - Total: {np.mean(results_array[:, 2]):.4f}s, Solve: {np.mean(results_array[:, 3]):.4f}s, GCN: {np.mean(results_array[:, 4]):.4f}s")
         print(f"{'='*80}\n")
 
-    # 最终汇总统计
+    # Final summary
     print("\n" + "="*80)
-    print("🎉 所有数据集评估完成！")
+    print("🎉 All datasets evaluated!")
     print("="*80)
-    print(f"测试数据集数: {len(test_subdirs)}")
-    print(f"层数: {layers}")
-    print(f"每层模型数: {len(seeds)}")
+    print(f"Test datasets: {len(test_subdirs)}")
+    print(f"Layers: {layers}")
+    print(f"Models per layer count: {len(seeds)}")
     if args.save_result:
-        print(f"结果保存目录: {result_dir}")
+        print(f"Output directory: {result_dir}")
     else:
-        print(f"结果文件: 未保存")
+        print(f"Result files: not saved")
     print("="*80)
 
 

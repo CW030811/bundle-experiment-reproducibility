@@ -147,16 +147,16 @@ def solve_bundle_size_pricing_MILP_v2(n, m, unit_us, unit_cs, ship_cs, Ns):
     """
     segment_ind = range(m)
     
-    # 处理 unit_us 形状，确保 (m, n)
+    # Normalize unit_us to shape (m, n)
     unit_us_mat = np.asarray(unit_us)
     if unit_us_mat.ndim == 1:
         unit_us_mat = unit_us_mat.reshape(1, -1)
     unit_us_mat = unit_us_mat[:m, :n]
     
-    # 处理 unit_cs 形状，拉平成 (n,)
+    # Flatten unit_cs to shape (n,)
     unit_cs_vec = np.asarray(unit_cs).reshape(-1)[:n]
     
-    # 处理 ship_cs 形状，拉平成 (m,)
+    # Flatten ship_cs to shape (m,)
     ship_cs_vec = np.asarray(ship_cs).reshape(-1)[:m]
     
     max_size = n
@@ -325,29 +325,29 @@ def generate_sample(m, l, u, sample_num, folder_path):
 
     def delete_all_files(folder_path):
         """
-        删除指定文件夹下的所有文件（保留空文件夹）
+        Delete all files in the given folder (the empty folder is kept).
         """
         if os.path.exists(folder_path):
-            # 文件夹已存在，询问用户是否删除
-            print(f"\n⚠️  警告: 文件夹 '{folder_path}' 已存在！")
-            confirm = input("是否删除该文件夹？(yes/no): ").strip().lower()
+            # The folder exists; ask the user whether to delete it
+            print(f"\n⚠️  Warning: folder '{folder_path}' already exists!")
+            confirm = input("Delete this folder? (yes/no): ").strip().lower()
             
             if confirm in ['yes', 'y']:
                 try:
                     shutil.rmtree(folder_path)
-                    print(f"✓ 文件夹 '{folder_path}' 删除成功。")
+                    print(f"✓ Folder '{folder_path}' deleted.")
                     time.sleep(2)
                 except Exception as e:
-                    print(f"❌ 删除失败: {e}")
+                    print(f"❌ Deletion failed: {e}")
                     return
             else:
-                print("❌ 取消删除。程序退出。")
+                print("❌ Deletion cancelled. Exiting.")
                 exit(0)
         else:
-            print(f"文件夹 '{folder_path}' 不存在，将创建新文件夹。")
+            print(f"Folder '{folder_path}' does not exist; creating it.")
         
         os.makedirs(folder_path, exist_ok=True)
-        print(f"✓ 文件夹 '{folder_path}' 创建成功。")
+        print(f"✓ Folder '{folder_path}' created.")
 
     folder_to_clean = folder_path
     delete_all_files(folder_to_clean)

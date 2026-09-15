@@ -1,10 +1,10 @@
 """
-多层数 EdgeScoringGCN 模型训练脚本（采用 Train_edge_GCN_single_update_edge 的无向+逐层边更新结构）
+Multi-layer EdgeScoringGCN training script (undirected message passing with layer-wise edge updates, as in Train_edge_GCN_single_update_edge).
 
-目标：
-- 使用“无向 message passing + 每层边特征更新”的新网络结构
-- 训练 3 层和 4 层模型，每层数跑多个 seed
-- 训练产物统一存放到新的输出目录，避免覆盖旧结果
+Goals:
+- Use the network with undirected message passing and per-layer edge-feature updates
+- Train multi-layer models (the release recipe uses 4 layers) with several seeds
+- Write training artifacts to a separate output directory so earlier results are not overwritten
 """
 
 from __future__ import annotations
@@ -29,7 +29,7 @@ import msgpack
 import msgpack_numpy as mnp
 
 class EdgeScoringGCN(nn.Module):
-    """Layer-wise edge updates with undirected message passing（与 Train_edge_GCN_single_update_edge 保持一致）."""
+    """Layer-wise edge updates with undirected message passing (consistent with Train_edge_GCN_single_update_edge)."""
 
     def __init__(
         self,
@@ -100,21 +100,21 @@ class EdgeScoringGCN(nn.Module):
         return out
 
 
-# 修复PyTorch 2.6的weights_only问题 - 添加安全全局变量
+# PyTorch 2.6+ weights_only compatibility: register safe globals
 if hasattr(torch.serialization, 'add_safe_globals'):
     torch.serialization.add_safe_globals([EdgeScoringGCN])
 
-# Matplotlib 简单中文支持（可选）
+# Optional Matplotlib CJK font fallback
 plt.rcParams["font.sans-serif"] = ["SimHei", "Microsoft YaHei", "DejaVu Sans"]
 plt.rcParams["axes.unicode_minus"] = False
 
 
 def read_data(file_path):
-    """读取数据文件并转换为图数据格式（从 bundle_utils.py 复制）"""
+    """Read a data file and convert it to graph data (copied from bundle_utils.py)."""
     with open(file_path, 'rb') as f:
         loaded_data = msgpack.load(f, object_hook=mnp.decode, strict_map_key=False)
     
-    # 提取数据
+    # Extract data
     product_num = loaded_data['product_num']
     segment_num = loaded_data['segment_num']
     unit_cs = loaded_data['unit_cs']
@@ -127,7 +127,7 @@ def read_data(file_path):
     running_time = loaded_data['running_time']
     gap = loaded_data['gap']
     
-    # 构建图数据
+    # Build graph data
     node_num = product_num + segment_num
     feature_mat = np.zeros((node_num, 4))
     feature_mat[:product_num, 0] = unit_cs[0, :]
@@ -137,7 +137,7 @@ def read_data(file_path):
     
     x = torch.tensor(feature_mat, dtype=torch.float)
     
-    # 构建边
+    # Build edges
     left_nodes = []
     right_nodes = []
     weights = []
@@ -150,7 +150,7 @@ def read_data(file_path):
     edge_index = torch.tensor([left_nodes, right_nodes], dtype=torch.long)
     edge_weight = torch.tensor(weights, dtype=torch.float)
     
-    # 标签
+    # Labels
     label = torch.tensor(np.append(np.array(opt_bundles).T, -np.ones((segment_num, segment_num), dtype=int), axis=0), dtype=torch.long)
     side_ind = torch.tensor(np.array([1]*product_num + [0]*segment_num)[:, np.newaxis], dtype=torch.long)
     
@@ -161,15 +161,15 @@ def read_data(file_path):
 
 
 def _split_indices(n: int, val_ratio: float, seed: int = 42) -> Tuple[List[int], List[int]]:
-    """手动划分训练/验证索引，避免额外依赖 sklearn
-    返回 (train_indices, val_indices)
+    """Split train/validation indices manually to avoid an extra sklearn dependency.
+    Returns (train_indices, val_indices).
     """
     indices = list(range(n))
     random.Random(seed).shuffle(indices)
     val_size = int(round(n * val_ratio))
     val_indices = indices[:val_size]
     train_indices = indices[val_size:]
-    # 防止极端情况下为空
+    # Guard against empty splits in edge cases
     if len(train_indices) == 0 and n > 0:
         train_indices, val_indices = indices[:-1], indices[-1:]
     return train_indices, val_indices
@@ -181,9 +181,9 @@ def _ensure_dirs(*dirs: str) -> None:
 
 
 def _clean_previous_run_artifacts(model_dir: str, keep_best: bool = True, model_pattern: str = "*") -> None:
-    """清理上一次训练在 dataset 目录下生成的工件，避免累积失效文件。
-    - 默认保留 best_model*.pt
-    - 清理 model*.pt、model-*.pt、train_loss*.csv、val_loss*.csv、training_curves*.png
+    """Remove artifacts left by a previous training run so stale files do not accumulate.
+    - best_model*.pt is kept by default
+    - Removes model*.pt, model-*.pt, train_loss*.csv, val_loss*.csv and training_curves*.png
     """
     patterns = [
         os.path.join(model_dir, f"model-{model_pattern}-*.pt"),
@@ -246,17 +246,17 @@ def _upsert_seed_training_summary(summary_path: str, row: dict) -> None:
 
 
 def _attach_edge_labels_to_data(data, meta):
-    """根据 meta 内的 opt_bundles 为每条边生成监督标签。
-    - 边的构造顺序在 read_data 中是：for i in products, for j in segments
-    - 对应标签应为：label[i,j] = opt_bundles[j, i]
+    """Build per-edge supervision labels from opt_bundles in meta.
+    - read_data builds edges in the order: for i in products, for j in segments
+    - The matching label is label[i,j] = opt_bundles[j, i]
     """
     product_num = int(meta[0])
     segment_num = int(meta[1])
-    opt_bundles = np.asarray(meta[6])  # 形状 (segment_num, product_num)
-    # 向量化：转置后按行展平，顺序与 read_data 中边的构造相同（先产品 i，再 segment j）
+    opt_bundles = np.asarray(meta[6])  # shape (segment_num, product_num)
+    # Vectorized: transpose, then flatten row-wise; matches the read_data edge order (product i, then segment j)
     edge_label = torch.tensor(opt_bundles.T.reshape(-1), dtype=torch.float)
     data.edge_label = edge_label
-    # 该训练脚本不使用 data.y。为避免不同 m 导致 DataLoader 在拼接 y 时维度不匹配，将其置为空张量。
+    # This trainer does not use data.y; keep it empty so DataLoader can batch instances with different m.
     try:
         data.y = torch.empty(0, dtype=torch.long)
     except Exception:
@@ -280,18 +280,18 @@ def train(
     dropout: float = 0.2,
     weight_decay: float = 1e-4,
     grad_clip: float = 1.0,
-    segment_num: int = 10,           # 仅用于日志与兼容入参；模型不再依赖它
+    segment_num: int = 10,           # logging/compatibility only; the model does not depend on it
     save_interval: int = 100,
-    val_ratio: float = 0.2,          # 8:2 划分
+    val_ratio: float = 0.2,          # 80/20 split
     split_seed: int = 2026,
     early_stopping_patience: int = 50,
     save_best_as_model_pt: bool = True,
     seed: int = 42,
     cleanup_before_train: bool = True,
 ) -> Tuple[torch.nn.Module, np.ndarray, Optional[np.ndarray]]:
-    """训练 EdgeScoringGCN 模型
-    参数说明同原 Training.py；segment_num 保留为兼容入参（模型无需 out_channels）。
-    返回：model, train_loss_hist, val_loss_hist
+    """Train an EdgeScoringGCN model.
+    Arguments follow the original Training.py; segment_num is kept for compatibility (the model needs no out_channels).
+    Returns: model, train_loss_hist, val_loss_hist
     """
     seed_train_start_time = time.perf_counter()
 
@@ -299,48 +299,48 @@ def train(
     np.random.seed(seed)
     random.seed(seed)
 
-    # 设备
+    # Device
     if torch.cuda.is_available():
         device = torch.device('cuda')
-        print(f"✅ CUDA可用: {torch.cuda.get_device_name()}")
+        print(f"✅ CUDA available: {torch.cuda.get_device_name()}")
         try:
-            print(f"   GPU内存: {torch.cuda.get_device_properties(0).total_memory / 1024**3:.1f} GB")
+            print(f"   GPU memory: {torch.cuda.get_device_properties(0).total_memory / 1024**3:.1f} GB")
         except Exception:
             pass
     else:
         device = torch.device('cpu')
-        print("⚠️ CUDA不可用，使用CPU训练")
+        print("⚠️ CUDA unavailable; training on CPU")
 
     train_path = os.path.join(data_dir, train_subdir)
-    # 将训练产物写入新的目录，避免覆盖旧结果
+    # Write training artifacts to a separate directory so earlier results are not overwritten
     model_dir = os.path.join(data_dir, model_subdir)
     charts_root = os.path.join(data_dir, charts_subdir)
     log_dir = os.path.join(data_dir, log_subdir)
     if os.path.exists(log_dir) and not os.path.isdir(log_dir):
         alt_log_dir = os.path.join(data_dir, "tensorboard_logs")
-        print(f"⚠️ 检测到 {log_dir} 已存在且不是目录，改用 {alt_log_dir} 作为日志目录")
+        print(f"⚠️ {log_dir} exists and is not a directory; using {alt_log_dir} for logs")
         log_dir = alt_log_dir
     _ensure_dirs(model_dir, charts_root, log_dir)
-    print(f"📁 模型输出目录: {model_dir}")
-    print(f"🖼️ 曲线输出目录: {charts_root}")
-    print(f"📝 日志目录: {log_dir}")
+    print(f"📁 Model output directory: {model_dir}")
+    print(f"🖼️ Chart output directory: {charts_root}")
+    print(f"📝 Log directory: {log_dir}")
 
-    # 清理历史工件
+    # Remove stale artifacts
     if cleanup_before_train:
         _clean_previous_run_artifacts(model_dir, keep_best=True)
 
-    # TensorBoard 日志
+    # TensorBoard logging
     try:
         writer = SummaryWriter(log_dir=log_dir)
     except Exception as e:
-        print(f"⚠️ TensorBoard 初始化失败，尝试回退。原因为: {e}")
+        print(f"⚠️ TensorBoard initialization failed; trying a fallback. Reason: {e}")
         alt_log_dir = os.path.join(model_dir, "tb_logs")
         _ensure_dirs(alt_log_dir)
         try:
             writer = SummaryWriter(log_dir=alt_log_dir)
-            print(f"ℹ️ 已回退到 {alt_log_dir} 作为日志目录")
+            print(f"ℹ️ Falling back to {alt_log_dir} for logs")
         except Exception as e2:
-            print(f"⚠️ 回退仍失败，将禁用TensorBoard日志。原因为: {e2}")
+            print(f"⚠️ Fallback also failed; TensorBoard logging disabled. Reason: {e2}")
             class _DummyWriter:
                 def add_scalar(self, *args, **kwargs):
                     pass
@@ -350,9 +350,9 @@ def train(
                     pass
             writer = _DummyWriter()
 
-    # 加载数据
+    # Load data
     if not os.path.exists(train_path):
-        raise FileNotFoundError(f"训练数据路径不存在: {train_path}")
+        raise FileNotFoundError(f"Training data path does not exist: {train_path}")
 
     file_list = [f for f in os.listdir(train_path) if f != ".DS_Store"]
     file_list.sort()
@@ -365,22 +365,22 @@ def train(
         dataset.append(dat)
         if i % 100 == 0:
             print(f"Loaded data: {i}/{len(file_list)}")
-    print(f"📦 总计加载 {len(dataset)} 个样本")
+    print(f"📦 Loaded {len(dataset)} samples in total")
 
-    # 固定划分 8:2 训练/验证，避免不同训练 seed 使用不同 validation set。
+    # Fixed 80/20 train/validation split so every training seed uses the same validation set.
     train_idx, val_idx = _split_indices(len(dataset), val_ratio, split_seed)
     train_data = [dataset[i] for i in train_idx]
     val_data = [dataset[i] for i in val_idx]
 
-    print("📊 数据划分结果：")
+    print("📊 Data split:")
     print(f"  Split seed: {split_seed}")
-    print(f"  训练集: {len(train_data)} ({(1-val_ratio)*100:.1f}%)")
-    print(f"  验证集: {len(val_data)} ({val_ratio*100:.1f}%)")
+    print(f"  Train: {len(train_data)} ({(1-val_ratio)*100:.1f}%)")
+    print(f"  Validation: {len(val_data)} ({val_ratio*100:.1f}%)")
 
     train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_data, batch_size=batch_size, shuffle=False) if val_data else None
 
-    # 类别不平衡：基于训练集一次性统计 pos_weight，避免每个 batch 波动
+    # Class imbalance: compute pos_weight once from the training set instead of per batch
     total_pos = 0.0
     total_cnt = 0
     for dat in train_data:
@@ -392,11 +392,11 @@ def train(
     pos_weight_value = (1.0 - pos_rate) / pos_rate
     pos_weight_tensor = torch.tensor(pos_weight_value, dtype=torch.float, device=device)
     criterion_bce = nn.BCEWithLogitsLoss(pos_weight=pos_weight_tensor)
-    print(f"⚖️ 全局正例比例 pos_rate={pos_rate:.6f}, 使用 pos_weight={pos_weight_value:.3f}")
+    print(f"⚖️ Global positive rate pos_rate={pos_rate:.6f}; using pos_weight={pos_weight_value:.3f}")
 
-    # 初始化模型（无向逐层边更新结构）
+    # Initialize the model (undirected message passing with layer-wise edge updates)
     print(
-        f"🏗️ 初始化 EdgeScoringGCN（无向逐层边更新）"
+        f"🏗️ Initializing EdgeScoringGCN (undirected, layer-wise edge updates)"
         f"(num_layers={num_layers}, hidden_channels={hidden_channels}, dropout={dropout})"
     )
     model = EdgeScoringGCN(
@@ -407,7 +407,7 @@ def train(
         dropout=dropout,
     )
     model = model.to(device)
-    print(f"📱 模型已移动到设备: {device}")
+    print(f"📱 Model moved to device: {device}")
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
@@ -444,9 +444,9 @@ def train(
     train_hist: List[Tuple[int, float]] = []
     val_hist: List[Tuple[int, float]] = []
 
-    print(f"\n开始训练 {epochs} 轮…")
+    print(f"\nStarting training for {epochs} epochs...")
     for epoch in range(epochs):
-        # 训练
+        # Training
         model.train()
         total_train = 0.0
         for batch in train_loader:
@@ -466,7 +466,7 @@ def train(
         writer.add_scalar("Loss/train", avg_train, epoch)
         train_hist.append((epoch, avg_train))
 
-        # 验证
+        # Validation
         avg_val = _eval(model, val_loader)
         if val_loader is not None and np.isfinite(avg_val):
             writer.add_scalar("Loss/validation", avg_val, epoch)
@@ -474,24 +474,24 @@ def train(
             scheduler.step(avg_val)
             writer.add_scalar("LR", optimizer.param_groups[0]["lr"], epoch)
 
-            # 最优模型保存 + 早停
+            # Save the best model and apply early stopping
             if avg_val < best_val - 1e-12:
                 best_val = avg_val
                 patience = 0
                 model_cpu = model.cpu()
                 torch.save(model_cpu, best_model_path)
-                model = model_cpu.to(device)  # 移回继续训练
-                print(f"  🎯 新最佳模型：val_loss={avg_val:.6f} (epoch={epoch})")
+                model = model_cpu.to(device)  # move back to continue training
+                print(f"  🎯 New best model: val_loss={avg_val:.6f} (epoch={epoch})")
             else:
                 patience += 1
                 if patience >= early_stopping_patience:
-                    print(f"  ⏹️ 触发早停（连续 {early_stopping_patience} 轮无改进）")
+                    print(f"  ⏹️ Early stopping ({early_stopping_patience} epochs without improvement)")
                     break
         else:
             scheduler.step(avg_train)
             writer.add_scalar("LR", optimizer.param_groups[0]["lr"], epoch)
 
-        # 日志
+        # Logging
         if epoch % 100 == 0:
             if val_loader is not None and np.isfinite(avg_val):
                 print(
@@ -501,19 +501,19 @@ def train(
             else:
                 print(f"Epoch {epoch:3d} | train={avg_train:.6f} | lr={optimizer.param_groups[0]['lr']:.2e}")
 
-        # 中间 checkpoint
+        # Intermediate checkpoint
         if epoch % save_interval == 0 and epoch > 0:
             ckpt_path = os.path.join(model_dir, f"model-{num_layers}layer_seed{seed}-{epoch}.pt")
             model_cpu = model.cpu()
             torch.save(model_cpu, ckpt_path)
             model = model_cpu.to(device)
-            # 可选：保存历史
+            # Optional: save history
             np.savetxt(os.path.join(model_dir, f"train_loss_{num_layers}layer_seed{seed}-{epoch}.csv"), np.array(train_hist), delimiter=",")
             if val_hist:
                 np.savetxt(os.path.join(model_dir, f"val_loss_{num_layers}layer_seed{seed}-{epoch}.csv"), np.array(val_hist), delimiter=",")
-            print(f"  💾 保存检查点: {ckpt_path}")
+            print(f"  💾 Saved checkpoint: {ckpt_path}")
 
-    # 结束后保存
+    # Save after training
     final_model_path = os.path.join(model_dir, f"model_edge_{num_layers}layer_seed{seed}.pt")
     if save_best_as_model_pt and os.path.exists(best_model_path):
         best_model = torch.load(best_model_path, weights_only=False)
@@ -522,7 +522,7 @@ def train(
         model_cpu = model.cpu()
         torch.save(model_cpu, final_model_path)
 
-    # 保存完整损失历史
+    # Save the full loss history
     train_hist_np = np.array(train_hist, dtype=float)
     train_loss_csv = os.path.join(model_dir, f"train_loss_edge_{num_layers}layer_seed{seed}.csv")
     val_loss_csv = os.path.join(model_dir, f"val_loss_edge_{num_layers}layer_seed{seed}.csv")
@@ -534,7 +534,7 @@ def train(
         val_hist_np = None
         val_loss_csv = ""
 
-    # 绘制曲线
+    # Plot curves
     run_tag = datetime.now().strftime("%Y%m%d-%H%M%S")
     chart_dir = os.path.join(charts_root, f"run_{run_tag}_edge_{num_layers}layer_seed{seed}")
     _ensure_dirs(chart_dir)
@@ -591,16 +591,16 @@ def train(
         },
     )
 
-    print("\n✅ 训练完成！")
-    print(f"  层数: {num_layers}")
+    print("\n✅ Training complete!")
+    print(f"  Layers: {num_layers}")
     print(f"  Seed: {seed}")
-    print(f"  最终模型: {final_model_path}")
+    print(f"  Final model: {final_model_path}")
     if os.path.exists(best_model_path):
-        print(f"  最佳模型: {best_model_path} (val={best_val:.6f})")
-    print(f"  训练曲线: {fig_path}")
-    print(f"  图表目录: {chart_dir}")
-    print(f"  Seed训练时间: {seed_training_time:.2f} 秒 ({seed_training_time / 60:.2f} 分钟)")
-    print(f"  Seed训练汇总CSV: {summary_csv}")
+        print(f"  Best model: {best_model_path} (val={best_val:.6f})")
+    print(f"  Training curves: {fig_path}")
+    print(f"  Chart directory: {chart_dir}")
+    print(f"  Seed training time: {seed_training_time:.2f} s ({seed_training_time / 60:.2f} min)")
+    print(f"  Seed training summary CSV: {summary_csv}")
 
     return model, train_hist_np, val_hist_np
 
@@ -611,9 +611,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train multi-layer EdgeScoringGCN models with different seeds")
     parser.add_argument("--data_dir", type=str, default=os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
     parser.add_argument("--train_subdir", type=str, default="data/deterministic/train_m10n10_correct_1e_3")
-    parser.add_argument("--model_subdir", type=str, default="results/base_training/models", help="模型保存目录")
-    parser.add_argument("--charts_subdir", type=str, default="results/base_training/charts", help="训练曲线保存目录")
-    parser.add_argument("--log_subdir", type=str, default="results/base_training/logs", help="TensorBoard日志目录")
+    parser.add_argument("--model_subdir", type=str, default="results/base_training/models", help="Model output directory")
+    parser.add_argument("--charts_subdir", type=str, default="results/base_training/charts", help="Training-curve output directory")
+    parser.add_argument("--log_subdir", type=str, default="results/base_training/logs", help="TensorBoard log directory")
     parser.add_argument("--epochs", type=int, default=200)
     parser.add_argument("--batch_size", type=int, default=256)
     parser.add_argument("--lr", type=float, default=0.001)
@@ -626,26 +626,26 @@ if __name__ == "__main__":
     parser.add_argument("--val_ratio", type=float, default=0.2)
     parser.add_argument("--split_seed", type=int, default=2026)
     parser.add_argument("--patience", type=int, default=50)
-    parser.add_argument("--no_cleanup", action="store_true", help="禁用训练前清理旧工件")
+    parser.add_argument("--no_cleanup", action="store_true", help="Do not remove old artifacts before training")
     args = parser.parse_args()
 
-    # 训练配置
-    layers = [4]  # 训练 3 层和 4 层
+    # Training configuration
+    layers = [4]  # release recipe: 4-layer models
     seeds = [1,2,3,4,5,6,7,8,9,10] 
 
     print("=" * 80)
-    print("🚀 开始训练多层 EdgeScoringGCN 模型")
+    print("🚀 Training multi-layer EdgeScoringGCN models")
     print("=" * 80)
     total_train_start_time = time.perf_counter()
 
     for num_layers in layers:
         print(f"\n{'='*80}")
-        print(f"📊 训练 {num_layers} 层模型")
+        print(f"📊 Training {num_layers}-layer models")
         print(f"{'='*80}")
         
         for seed in seeds:
             print(f"\n{'='*60}")
-            print(f"🌱 使用 seed={seed} 训练 {num_layers} 层模型")
+            print(f"🌱 Using seed={seed} to train the {num_layers}-layer model")
             print(f"{'='*60}")
             
             train(
@@ -675,15 +675,15 @@ if __name__ == "__main__":
                 seed=seed,
             )
             
-            print(f"\n✅ {num_layers}层 seed={seed} 训练完成\n")
+            print(f"\n✅ {num_layers}-layer seed={seed} training complete\n")
 
     print("\n" + "=" * 80)
-    print("🎉 所有模型训练完成！")
+    print("🎉 All models trained!")
     print("=" * 80)
-    print("\n生成的模型文件：")
+    print("\nGenerated model files:")
     for num_layers in layers:
         for seed in seeds:
             print(f"  - best_model_edge_{num_layers}layer_seed{seed}.pt")
     total_train_time = time.perf_counter() - total_train_start_time
-    print(f"\n总训练时间: {total_train_time:.2f} 秒 ({total_train_time / 60:.2f} 分钟)")
+    print(f"\nTotal training time: {total_train_time:.2f} s ({total_train_time / 60:.2f} min)")
     print("=" * 80)

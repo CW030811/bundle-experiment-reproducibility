@@ -16,7 +16,7 @@ bin2num = lambda x: int(''.join(map(str, x.tolist())), 2)
 def process_data(file_path):
     """
     Load and process data from a msgpack file
-    动态计算 cs / Rs（不依赖存储值）
+    Compute cs / Rs on the fly (independent of stored values).
     """
     with open(file_path, 'rb') as f:
         data = msgpack.load(f, object_hook=mnp.decode, strict_map_key=False)
@@ -33,16 +33,16 @@ def process_data(file_path):
     running_time = data['running_time']
     gap = data['gap']
 
-    # ---------- 动态计算成本时所需的基础信息 ----------
+    # ---------- Base quantities for on-the-fly cost computation ----------
     n = int(product_num)
     m = int(segment_num)
     
-    # 处理 unit_cs 形状，拉平成 (n,)
+    # Flatten unit_cs to shape (n,)
     unit_cs_vec = np.asarray(unit_cs).reshape(-1)[:n]
-    # 处理 ship_cs 形状，拉平成 (m,)
+    # Flatten ship_cs to shape (m,)
     ship_cs_vec = np.asarray(ship_cs).reshape(-1)[:m]
 
-    # 处理 unit_us 形状，确保 (m, n)
+    # Normalize unit_us to shape (m, n)
     unit_us_mat = np.asarray(unit_us)
     if unit_us_mat.ndim == 1:
         unit_us_mat = unit_us_mat.reshape(1, -1)
@@ -69,16 +69,16 @@ def solve_bsp_for_evaluation(n, m, unit_us, unit_cs, ship_cs, Ns):
     """
     segment_ind = range(m)
     
-    # 处理 unit_us 形状，确保 (m, n)
+    # Normalize unit_us to shape (m, n)
     unit_us_mat = np.asarray(unit_us)
     if unit_us_mat.ndim == 1:
         unit_us_mat = unit_us_mat.reshape(1, -1)
     unit_us_mat = unit_us_mat[:m, :n]
     
-    # 处理 unit_cs 形状，拉平成 (n,)
+    # Flatten unit_cs to shape (n,)
     unit_cs_vec = np.asarray(unit_cs).reshape(-1)[:n]
     
-    # 处理 ship_cs 形状，拉平成 (m,)
+    # Flatten ship_cs to shape (m,)
     ship_cs_vec = np.asarray(ship_cs).reshape(-1)[:m]
     
     max_size = n

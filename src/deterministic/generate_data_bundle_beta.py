@@ -89,31 +89,31 @@ def generate_sample(m, l, u, sample_num, folder_path, beta_a, beta_b):
 
     def delete_all_files(folder_path):
         """
-        删除指定文件夹下的所有文件（保留空文件夹）
+        Delete all files in the given folder (the empty folder is kept).
         """
         if os.path.exists(folder_path):
-            # 文件夹已存在，询问用户是否删除
-            print(f"\n⚠️  警告: 文件夹 '{folder_path}' 已存在！")
-            confirm = input("是否删除该文件夹？(yes/no): ").strip().lower()
+            # The folder exists; ask the user whether to delete it
+            print(f"\n⚠️  Warning: folder '{folder_path}' already exists!")
+            confirm = input("Delete this folder? (yes/no): ").strip().lower()
             
             if confirm in ['yes', 'y']:
                 try:
                     shutil.rmtree(folder_path)
-                    print(f"✓ 文件夹 '{folder_path}' 删除成功。")
+                    print(f"✓ Folder '{folder_path}' deleted.")
                     time.sleep(2)
                 except Exception as e:
-                    print(f"❌ 删除失败: {e}")
+                    print(f"❌ Deletion failed: {e}")
                     return
             else:
-                print("❌ 取消删除。程序退出。")
+                print("❌ Deletion cancelled. Exiting.")
                 exit(0)
         else:
-            print(f"文件夹 '{folder_path}' 不存在，将创建新文件夹。")
+            print(f"Folder '{folder_path}' does not exist; creating it.")
         
         os.makedirs(folder_path, exist_ok=True)
-        print(f"✓ 文件夹 '{folder_path}' 创建成功。")
+        print(f"✓ Folder '{folder_path}' created.")
 
-    # 示例用法
+    # Example usage
     folder_to_clean = folder_path
     delete_all_files(folder_to_clean)
     for iter in range(sample_num):

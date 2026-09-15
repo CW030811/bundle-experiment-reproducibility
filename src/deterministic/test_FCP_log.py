@@ -29,8 +29,8 @@ class GCN(nn.Module):
         self.lr_conv3 = GENConv(hidden_channels, hidden_channels, edge_dim=edge_dim)
         self.rl_conv3 = GENConv(hidden_channels, hidden_channels, edge_dim=edge_dim)
         self.FC = torch.nn.Linear(hidden_channels, out_channels)
-        self.dropout = nn.Dropout(0.5) # 尝试改Dropout的数据（0.3 0.2）
-        # 尝试加层数
+        self.dropout = nn.Dropout(0.5) # other dropout values tried: 0.3, 0.2
+        # more layers were also tried
 
     def forward(self, data):
         x, edge_index, edge_weight, side_ind = data.x, data.edge_index, data.edge_attr, data.side_ind   #side_ind: 0 for customer, 1 for product
@@ -127,7 +127,7 @@ class EdgeScoringGCN(nn.Module):
         return out
 
 
-# 修复PyTorch 2.6的weights_only问题 - 添加安全全局变量
+# PyTorch 2.6+ weights_only compatibility: register safe globals
 if hasattr(torch.serialization, 'add_safe_globals'):
     torch.serialization.add_safe_globals([EdgeScoringGCN])
     
@@ -330,7 +330,7 @@ def revenue_ratio(n, m, unit_cs, ship_cs, unit_us, Ns, opt_rev, pred_assort, tim
     segment_ind = np.array([i for i in range(m)])
     
     # Get unique predicted bundles
-    # pred_assort (预测的产品组合矩阵)并生成对应可行bundle
+    # pred_assort (predicted product-assortment matrix) and the corresponding feasible bundles
     bundle_dic = {}
     for i in range(m):
         bundle_idx = binary_vector_to_bundle_id(pred_assort[i, :])
@@ -340,7 +340,7 @@ def revenue_ratio(n, m, unit_cs, ship_cs, unit_us, Ns, opt_rev, pred_assort, tim
             bundle_dic[bundle_idx] = [i]
     
     predicted_bundles = list(bundle_dic.keys())
-    originally_predicted = set(predicted_bundles)  # 记录原始预测的 bundles
+    originally_predicted = set(predicted_bundles)  # bundles from the original prediction
     
     # Always include bundle 0 (empty bundle) to ensure feasibility
     # This provides a fallback solution where everyone chooses nothing
@@ -369,7 +369,7 @@ def revenue_ratio(n, m, unit_cs, ship_cs, unit_us, Ns, opt_rev, pred_assort, tim
     model.Params.OutputFlag = 0
     model.Params.MIPGap = 1e-3
     model.Params.TimeLimit = time_limit
-    model.Params.DualReductions = 0  # 强制 Gurobi 区分不可行和无界
+    model.Params.DualReductions = 0  # make Gurobi distinguish infeasible from unbounded
     
     # For debugging infeasibility - can compute IIS (Irreducible Inconsistent Subsystem)
     # model.Params.OutputFlag = 1  # Uncomment to see detailed output
@@ -388,27 +388,27 @@ def revenue_ratio(n, m, unit_cs, ship_cs, unit_us, Ns, opt_rev, pred_assort, tim
     # Standard constraints (only for predicted bundles)
     model.addConstrs((s[k] >= Rs_predicted[k, bundle_to_idx[i]] - p[i] for i in predicted_bundles for k in segment_ind))
     
-    #     # 改进的次可加性约束
-    # # 只对原始预测的 bundles 添加次可加性约束，不包括手动添加的 bundle 0
-    # # 预计算所有bundle的产品集合
+    #     # improved subadditivity constraints
+    # # add subadditivity constraints only for originally predicted bundles, excluding the manually added bundle 0
+    # # precompute the product set of every bundle
     # bundle_product_sets = {}
-    # for bundle_id in originally_predicted:  # 只对原始预测的 bundles
+    # for bundle_id in originally_predicted:  # originally predicted bundles only
     #     bundle_product_sets[bundle_id] = bundle_to_product_set(bundle_id, n)
 
-    # # 筛选约束
-    # added_constraints = set()  # 避免重复约束
+    # # filter constraints
+    # added_constraints = set()  # avoid duplicate constraints
 
-    # for k in originally_predicted:  # 只对原始预测的 bundles
-    #     if k == 0:  # 跳过空集
+    # for k in originally_predicted:  # originally predicted bundles only
+    #     if k == 0:  # skip the empty set
     #         continue
 
     #     k_set = bundle_product_sets[k]
     #     if len(k_set) == 0:
     #         continue
 
-    #     for i in originally_predicted:  # 只对原始预测的 bundles
-    #         for j in originally_predicted:  # 只对原始预测的 bundles
-    #             if i >= j:  # 避免重复
+    #     for i in originally_predicted:  # originally predicted bundles only
+    #         for j in originally_predicted:  # originally predicted bundles only
+    #             if i >= j:  # avoid duplicates
     
     # K-way cover subadditivity constraints (free disposal, minimal covers only).
     # This implementation stays exact but avoids Python set operations and avoids
