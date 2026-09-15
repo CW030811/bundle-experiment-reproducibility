@@ -1,4 +1,10 @@
-# Table 7 exact-reproduction record
+# Table 7 reproduction record
+
+## Status
+
+`ACCEPTED_WITH_DOCUMENTED_SCOPE` under the policy in `docs/ACCEPTANCE.md`
+(internally labeled `EXACT`; the legacy word remains only in paths such as
+`results/main_exact_rerun/`).
 
 All four `(m,n)=(10,10)` OOD experiments were regenerated with the recovered
 final data and all ten base checkpoints. Each variant produced 100 sample-level
@@ -14,16 +20,18 @@ seed-averaged rows and 1,000 seed-by-sample rows.
 | `Beta(.5,.5)` | `0.991 / 0.008` | `0.991 / 0.008` | match |
 
 For `Beta(.5,.5)`, the raw population standard deviation is
-`0.007491434479918724`, while the raw sample standard deviation is
+`0.007491434479918724` and the raw sample standard deviation is
 `0.007529174942855045`. The paper's three-decimal `0.008` agrees with the sample
-standard deviation and was explicitly accepted as a negligible statistical
-rounding/convention difference. Both raw values remain recorded.
+standard deviation; this statistical convention difference was explicitly
+accepted as negligible. Both raw values remain recorded.
 
-Runtime columns are retained in the output CSV files but excluded from the
-exactness decision.
+Runtime columns are kept in the output CSV files but excluded from acceptance.
 
-## Verification
+## Commands
 
 ```bash
+uv run python scripts/reproduce.py replay table7
+uv run python scripts/reproduce.py verify table7
+# Equivalent lower-level verifier:
 uv run python scripts/verify_main_results.py --experiment table7
 ```

@@ -1,19 +1,26 @@
-# Table 2 Exact Reproduction
+# Table 2 reproduction record
 
-## Classification
+## Status
 
-`EXACT` under the agreed paper-statistics policy:
+`ACCEPTED_WITH_DOCUMENTED_SCOPE` under the policy in `docs/ACCEPTANCE.md`.
+The internal project label for this outcome was `EXACT`; that word survives
+only in legacy script and directory names such as `scripts/run_table2_exact.py`
+and `results/main_exact_rerun/`.
+
+Acceptance scope:
 
 - all three final `correct` test sets contain 100 instances;
 - FCP, PCP and FCPLS each completed 10 seeds × 100 samples for every size;
 - BSP completed 100 samples for every size;
 - runtime is machine-dependent and excluded;
-- profit mean/std are compared to the paper's three-decimal display precision;
-- numerical noise within 0.00005 beyond the nominal half-display-unit rounding boundary is accepted and explicitly recorded.
+- profit mean/std are compared at the paper's three-decimal display precision;
+- numerical noise of at most 0.00005 beyond the nominal half-display-unit
+  rounding boundary is accepted and recorded explicitly.
 
 The machine-readable verification report is
-`results/main_exact_rerun/table2/verification_report.json`. It reports
-`passed=true`, 12/12 checked cells and no mismatches.
+`results/main_exact_rerun/table2/verification_report.json`, restored by
+`reproduce.py prepare table2`. It reports `passed=true`, 12/12 checked cells
+and no mismatches.
 
 ## Final inputs and model
 
@@ -33,15 +40,18 @@ The machine-readable verification report is
 
 ## Result completeness
 
-`results/main_exact_rerun/table2/` contains 35 files:
+In the published archive, `results/main_exact_rerun/table2/` contains 31 files:
 
 - FCP: three 100-row sample-average CSVs, three 10-row seed summaries and three 1,000-row seed×sample long tables;
-- PCP: the same complete 3×3 structure;
-- FCPLS: the same complete 3×3 structure;
+- PCP: the same 3×3 structure;
+- FCPLS: the same 3×3 structure;
 - BSP: three 100-row sample tables;
-- four execution logs and one verification report.
+- one verification report.
 
-No evaluator log contains a failed sample or size-limited-license error. BSP explicitly reports zero failed samples in all three datasets.
+The four execution logs of the original run are not distributed, because
+machine logs are excluded from the public release. When the run was accepted,
+no evaluator log contained a failed sample or a size-limited-license error, and
+BSP reported zero failed samples on all three datasets.
 
 ## Non-runtime verification
 
@@ -60,11 +70,16 @@ No evaluator log contains a failed sample or size-limited-license error. BSP exp
 | m=30 | FCPLS | 0.987864505 | 0.005765097 | 0.005794141 | 0.988 / 0.006 | displayed precision |
 | m=30 | BSP | 0.854055425 | 0.019689583 | 0.019788776 | 0.854 / 0.020 | displayed precision |
 
-The two tolerance cases lie only about `1.41e-5` and `4.07e-6` beyond the nominal three-decimal rounding boundary. Raw values remain archived; they were not replaced by paper values.
+The two tolerance cases lie only about `1.41e-5` and `4.07e-6` beyond the
+nominal three-decimal rounding boundary. Raw values remain archived; they were
+not replaced by paper values.
 
 ## Commands
 
 ```bash
+uv run python scripts/reproduce.py replay table2
+uv run python scripts/reproduce.py verify table2
+# Equivalent lower-level commands:
 uv run python scripts/run_table2_exact.py
 uv run python scripts/verify_main_results.py --experiment table2
 ```

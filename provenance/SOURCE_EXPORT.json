@@ -226,7 +226,7 @@
   },
   "provenance/PORTABILITY_PATCHES.md": {
     "source_sha256": "a9f85f74bbc5f7d070559a4cc3488fa5cb22037fb2e1325da2984ba9084b1c50",
-    "published_sha256": "3ecfad4f3252e75dbad8c4c9b86fccdc634fe58f2445be674b3fe7308fb1f125",
+    "published_sha256": "4aa1fc266b3f10f03d6b4cb7e084f89ac83961c81fc289d744b98a86a60d67fb",
     "changed_in_public_export": true
   },
   "provenance/FIGURE11_SOURCE_GUARD.md": {
@@ -234,20 +234,20 @@
     "published_sha256": "05b0ea81716e5915f775f28e84abc7b309e5ec37d1f438a5186c60a185767d5c",
     "changed_in_public_export": true
   },
-  "provenance/TABLE2_EXACT_REPRO.md": {
+  "provenance/TABLE2_REPRODUCTION.md": {
     "source_sha256": "0111fc254865ae216d9465b2a62f168c891b188991156e1a84c44d0a87eecca2",
-    "published_sha256": "0111fc254865ae216d9465b2a62f168c891b188991156e1a84c44d0a87eecca2",
-    "changed_in_public_export": false
+    "published_sha256": "b768fa93debd1c4663818901798578300fdaa0cbedb026e34739f9e3711c9ada",
+    "changed_in_public_export": true
   },
-  "provenance/TABLE6_EXACT_REPRO.md": {
+  "provenance/TABLE6_REPRODUCTION.md": {
     "source_sha256": "80aa6ebf9335d6d8559696aeb859b49a29aca0ffea9c708536d72f2a211b148f",
-    "published_sha256": "80aa6ebf9335d6d8559696aeb859b49a29aca0ffea9c708536d72f2a211b148f",
-    "changed_in_public_export": false
+    "published_sha256": "400104449f9db39b3ccc2a27d03862e208461d62ca61a50f4a4e5fcfccd24869",
+    "changed_in_public_export": true
   },
-  "provenance/TABLE7_EXACT_REPRO.md": {
+  "provenance/TABLE7_REPRODUCTION.md": {
     "source_sha256": "686c608f4d97531ecd439eda3d59bdf67cbce8632154e719da7b41510101cbaa",
-    "published_sha256": "686c608f4d97531ecd439eda3d59bdf67cbce8632154e719da7b41510101cbaa",
-    "changed_in_public_export": false
+    "published_sha256": "705dca2675f0125353077a91840ce0dad92a0f6149f814cd8ddaf6e2ba3e151f",
+    "changed_in_public_export": true
   },
   "tests/test_verify_remaining_results.py": {
     "source_sha256": "c09978f86d30b0f5ff65200ef407e64f515239180889739b010bbf864cb7bd45",

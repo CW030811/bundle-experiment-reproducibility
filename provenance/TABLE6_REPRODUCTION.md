@@ -1,8 +1,16 @@
-# Table 6 exact-reproduction record
+# Table 6 reproduction record
 
-Table 6 was regenerated from the recovered final `(m,n)=(10,10)` data and the ten
-`correct_lr_3` checkpoints. Runtime fields are recorded in the CSV files but are
-excluded from the exactness decision because they depend on the machine.
+## Status
+
+`ACCEPTED_WITH_DOCUMENTED_SCOPE` under the policy in `docs/ACCEPTANCE.md`
+(internally labeled `EXACT`; the legacy word remains only in paths such as
+`results/main_exact_rerun/`).
+
+Table 6 was regenerated from the recovered final `(m,n)=(10,10)` data and the
+ten `correct_lr_3` checkpoints. Runtime fields are kept in the CSV files but are
+excluded from acceptance because they depend on the machine. The training-loss
+values come from archived training records; this record is not evidence that
+all ten models were newly retrained.
 
 ## Evidence
 
@@ -13,14 +21,17 @@ excluded from the exactness decision because they depend on the machine.
 - Per-seed summary: `results/main_exact_rerun/table6/test_result_FCP_4layer_test_m10n10_correct_1e_3_seed_avg.csv`.
 - Verification command: `scripts/verify_main_results.py --experiment table6`.
 
-The verifier checked all ten seeds. For every seed, final training loss and best
-validation loss match the paper to four decimals, while FCP profit mean and
-population standard deviation match to three decimals. This is 40/40 matching
+The verifier checked all ten seeds. For every seed, the final training loss and
+best validation loss match the paper to four decimals, and the FCP profit mean
+and population standard deviation match to three decimals: 40/40 matching
 non-runtime values. No sample or seed failed.
 
 ## Commands
 
 ```bash
+uv run python scripts/reproduce.py replay table6
+uv run python scripts/reproduce.py verify table6
+# Equivalent lower-level commands:
 uv run python src/deterministic/test_FCP_multi_model_avg.py \
   --data_dir . \
   --test_subdirs data/deterministic/test_m10n10_correct_1e_3 \

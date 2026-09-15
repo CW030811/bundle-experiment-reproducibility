@@ -34,3 +34,9 @@
   merely to export these previously accepted results.
 - No paper PDF, account configuration, solver license, authentication material,
   virtual environment or machine logs are distributed.
+- Maintenance after v0.2.0: source comments and console messages are in English;
+  the Figure 11 archive extracts to `data/appendix_e/` and `models/appendix_e_seed1/`;
+  the Table 2/6/7 reproduction records use the public acceptance
+  terminology. A checkout that already extracted the v0.2.0 Figure 11 archive should
+  delete `artifacts/appendix_e_final/manifest.json` and the old `Dataset/` and
+  `models_multi_layer_edge_update/` directories before running `prepare figure11` again.
