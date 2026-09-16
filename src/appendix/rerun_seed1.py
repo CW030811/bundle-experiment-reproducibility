@@ -598,9 +598,9 @@ def main():
     parser.add_argument("--fcp-sample-count", type=int, default=30)
     parser.add_argument("--pcp-sample-count", type=int, default=10)
     parser.add_argument("--k-sample-count", type=int, default=30)
-    # The final seed-1 Appendix C/D rerun used a 60-second per-solve limit.
-    # This matters for PCP rows that return ObjBound when Gurobi reaches TIME_LIMIT.
-    parser.add_argument("--time-limit", type=int, default=60)
+    # The final Appendix C/D reference data uses a 600-second per-solve limit,
+    # matching the legacy solver's built-in TimeLimit = 600 and the paper text.
+    parser.add_argument("--time-limit", type=int, default=600)
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--output-root", type=Path, default=OUT_ROOT)
     args = parser.parse_args()
@@ -615,7 +615,7 @@ def main():
         "fcp_sample_count": args.fcp_sample_count,
         "pcp_sample_count": args.pcp_sample_count,
         "k_sample_count": args.k_sample_count,
-        "note": "Reconstructed from the final 2026-07-02 seed-1 provenance; the original /tmp driver was not archived.",
+        "note": "This driver generates the paper's Figure 9 and Figure 10; its output is the reference data.",
     }
     (OUT_ROOT / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     if args.mode == "cutoff":

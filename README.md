@@ -44,14 +44,14 @@ references. `--output-dir` selects another non-reference output directory.
 | Table 2 | FCP, PCP, FCPLS and BSP on three sizes; 12 method/size cells. | [Guide](experiments/table2/README.md) · [Data](bundles/table2.tar.gz) |
 | Table 3 | Base FCP/PCP/FCPLS on six larger sizes; 17 reported method/size cells. | [Guide](experiments/table3/README.md) · [Data](bundles/table3.tar.gz) |
 | Table 4 | Self-improved FCP-I/PCP-I/FCPLS-I on six larger sizes; 15 reported cells. | [Guide](experiments/table4/README.md) · [Data](bundles/table4.tar.gz) |
-| Table 5 | Corrected FCP/BSP random-valuation sweep; 24 InS/OOS statistics. | [Guide](experiments/table5/README.md) · [Data](bundles/table5.tar.gz) |
+| Table 5 | Corrected FCP/BSP random-valuation sweep and CPBSD-A rerun; 36 InS/OOS statistics. | [Guide](experiments/table5/README.md) · [Data](bundles/table5.tar.gz) |
 | Table 6 | Ten-seed FCP replay plus archived training-loss records; 40 reported values. | [Guide](experiments/table6/README.md) · [Data](bundles/table6.tar.gz) |
 | Table 7 | Four OOD distributions, 100 samples and ten base seeds per distribution. | [Guide](experiments/table7/README.md) · [Data](bundles/table7.tar.gz) |
 | Figure 6 | Customer-count scalability; FCP/BSP, 8 curve points. | [Guide](experiments/figure6/README.md) · [Data](bundles/figure6.tar.gz) |
 | Figure 7 | Product-count scalability; FCP/PCP/BSP, 12 curve points. | [Guide](experiments/figure7/README.md) · [Data](bundles/figure7.tar.gz) |
 | Figure 8 | Base and self-improved comparison; all five curves, 20 curve points. | [Guide](experiments/figure8/README.md) · [Data](bundles/figure8.tar.gz) |
-| Figure 9 | Seed-1 cutoff sensitivity with 1,080 reference/replay keys. | [Guide](experiments/figure9/README.md) · [Data](bundles/figure9.tar.gz) |
-| Figure 10 | Candidate-budget sensitivity with 630 non-runtime replay rows. | [Guide](experiments/figure10/README.md) · [Data](bundles/figure10.tar.gz) |
+| Figure 9 | Seed-1 cutoff sensitivity with 1,080 rows and a 600-second per-instance time limit. | [Guide](experiments/figure9/README.md) · [Data](bundles/figure9.tar.gz) |
+| Figure 10 | Candidate-budget sensitivity with 630 rows and a 600-second per-instance time limit. | [Guide](experiments/figure10/README.md) · [Data](bundles/figure10.tar.gz) |
 | Figure 11 | Sixty-instance LP/MILP path replay; 489 of 522 accepted moves translate. | [Guide](experiments/figure11/README.md) · [Data](bundles/figure11.tar.gz) |
 
 Three additional archives, `training_self_1.tar.gz` through

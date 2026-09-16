@@ -15,18 +15,18 @@ end-to-end retraining equivalence where that was not established.
    is `0.007529174942855045`. The paper's `0.008` is accepted using the documented
    sample-std convention. Other mean/std values match their displayed precision.
 5. Figure 9 supplies a seed-1 cutoff-sensitivity reference/replay package with
-   1,080 experiment keys, nine cutoffs and a 60-second per-solve limit.
-   Package acceptance follows the implemented verification policy; the strict
-   row-level comparator is a separate check, not a claim of bitwise equivalence.
-6. Figure 10 has 630 identical non-runtime replay rows/fields. Its archived audit
-   replay initially used 600 seconds, but all total row runtimes were below 60
-   seconds; the packaged final driver defaults to 60 seconds.
+   1,080 experiment keys, nine cutoffs and a 600-second per-solve limit.
+   All non-runtime fields are bit-identical between reference and replay.
+6. Figure 10 has 630 identical non-runtime replay rows/fields with a
+   600-second per-solve limit. All non-runtime fields are bit-identical.
 7. Figure 11's 60 per-instance translation vectors and paths reproduce `489/522`.
    Its exact solver sources and checkpoint are SHA-256 guarded.
-8. Table 5 contains 120 FCP/BSP sweep rows: two scales, three cost regimes, five
-   seeds, two methods and fixed/buggy Z variants. The fixed-method InS/OOS
-   averages reproduce 24 paper statistics. The independently checked sweep
-   scope is FCP/BSP InS/OOS.
+8. Table 5 contains 120 FCP/BSP sweep rows and 30 CPBSD-A rerun cells: two
+   scales, three cost regimes, five seeds. FCP/BSP use fixed/buggy Z variants;
+   CPBSD-A uses MIPGap=1e-3, TimeLimit=300s, Threads=8. The fixed-method
+   InS/OOS averages reproduce 36 paper statistics (FCP, BSP and CPBSD-A).
+   N=30 CPBSD-A cells reach the 300-second time limit; their incumbents are
+   machine-dependent and OOS values may differ across hardware.
 
 `scripts/verify_reference_results.py` audits the released files. Passing this
 command does not mean it just retrained a model or solved a MILP. Actual replay

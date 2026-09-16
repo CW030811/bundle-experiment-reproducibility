@@ -14,11 +14,10 @@ PyTorch 2.8 / PyG 2.6 environment. None of them changes an experiment algorithm.
    `bin(int(mask)).count("1")`, which yields the same popcount and sort key.
 3. The Table 5 scripts only changed in-package default paths. The Z fix,
    instance generation, model, seeds and solver logic are unchanged.
-4. The original temporary Appendix C/D driver was not archived.
-   `src/appendix/rerun_seed1.py` was rebuilt from the seed-10 generic runner and
-   set to the final provenance: seed 1, 30 FCP samples, 10 separate PCP samples,
-   30 K samples and a 60-second limit per solve. The sampled sets were checked
-   row by row against the final 1,080-row and 630-row CSVs.
+4. `src/appendix/rerun_seed1.py` generates the paper's Figure 9 and Figure 10.
+   It was rebuilt from the seed-10 generic runner and set to the final
+   provenance: seed 1, 30 FCP samples, 10 separate PCP samples, 30 K samples
+   and a 600-second limit per solve. Its output is the reference data.
 5. The Appendix E runner, cached-LP source and results were recovered from the
    project history. The public version changes the data-directory default to the
    current directory and the plotting cache to an in-package path; solver logic is

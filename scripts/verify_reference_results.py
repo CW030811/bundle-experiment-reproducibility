@@ -21,14 +21,6 @@ def equal_value(a, b):
         return a == b
 
 
-def accept_figure9_exception(key, column, archived, replay):
-    return (key == ('test_m30n10_1e_3', 'sample_data_64_size_10.msgpack', '0.1', 'PCP')
-            and column == 'revenue_ratio'
-            and abs(float(archived) - 1.004751821452851) < 1e-12
-            and math.isfinite(float(replay))
-            and abs(float(replay) - float(archived)) <= 0.00130)
-
-
 def rows(path):
     with path.open(newline='', encoding='utf-8') as handle:
         return list(csv.DictReader(handle))
@@ -47,33 +39,31 @@ def verify_sensitivity(name, result_root=None):
     expected = 1080 if cutoff else 630
     if not (len(reference) == len(replay) == len(left) == len(right) == expected and left.keys() == right.keys()):
         raise ValueError(name + ': incomplete or duplicate experiment keys')
-    differences, exceptions = [], []
+    differences = []
     for key, archived in left.items():
         for field, a in archived.items():
             if field in keys + ignored:
                 continue
             b = right[key][field]
             if not equal_value(a, b):
-                item = {'key': key, 'field': field, 'archived': a, 'replay': b}
-                if cutoff and accept_figure9_exception(key, field, a, b):
-                    exceptions.append(item)
-                else:
-                    differences.append(item)
-    return {'passed': not differences and len(exceptions) <= 1, 'rows': expected,
-            'non_runtime_bit_identical': not differences and not exceptions,
-            'accepted_exceptions': exceptions, 'mismatches': differences}
+                differences.append({'key': key, 'field': field, 'archived': a, 'replay': b})
+    return {'passed': not differences, 'rows': expected,
+            'non_runtime_bit_identical': not differences,
+            'mismatches': differences}
 
 
 def verify_table5(result_csv=None):
     published = json.loads((ROOT / 'provenance/PUBLISHED_VALUES.json').read_text())['table5_rows']
     data = rows(Path(result_csv) if result_csv else ROOT / 'artifacts/random_valuation/results/experiment_zfix.csv')
+    ca_data = rows(ROOT / 'results/random_valuation/cpbsd_a_rerun.csv')
     checks = []
     for target in published:
-        for method, offset in [('FCP', 2), ('BSP', 5)]:
-            subset = [r for r in data if r['scale'] == f'N{target[0]}_K50' and r['cost'] == target[1]
+        for method, offset in [('FCP', 2), ('BSP', 5), ('CPBSD-A', 8)]:
+            src = ca_data if method == 'CPBSD-A' else data
+            subset = [r for r in src if r['scale'] == f'N{target[0]}_K50' and r['cost'] == target[1]
                       and r['method'] == method and r['variant'] == 'fixed']
             if len(subset) != 5 or len({r['seed'] for r in subset}) != 5:
-                raise ValueError('Table 5 incomplete five-seed group')
+                raise ValueError(f'Table 5 incomplete five-seed group: {method} N={target[0]} {target[1]}')
             for field, index in [('ins', offset), ('oos', offset + 1)]:
                 value = statistics.fmean(float(r[field]) for r in subset)
                 checks.append({'scale': target[0], 'cost': target[1], 'method': method,
@@ -82,8 +72,9 @@ def verify_table5(result_csv=None):
     generated = subprocess.check_output([sys.executable, str(ROOT / 'src/random_valuation/make_table5_rows.py')], cwd=ROOT)
     archived = (ROOT / 'artifacts/random_valuation/results/table5_corrected_rows.tex').read_bytes()
     return {'passed': len(data) == 120 and all(x['matched'] for x in checks) and (result_csv is not None or generated == archived),
-            'checked_fcp_bsp_statistics': len(checks), 'cpbsd_a_independently_replayed': False,
-            'scope': 'FCP/BSP statistics from archived sweep; CPBSD-A and runtime cells reused from paper', 'details': checks}
+            'checked_statistics': len(checks),
+            'scope': 'FCP/BSP from archived sweep, CPBSD-A from independent rerun; N=30 CPBSD-A at 300s time limit (machine-dependent incumbents)',
+            'details': checks}
 
 
 def verify_figure11(result_root=None):
