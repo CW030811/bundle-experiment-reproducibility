@@ -8027,7 +8027,7 @@
     "figure9": {
       "file": "bundles/figure9.tar.gz",
       "sha256": "d6915679c81088f677456383a08f8490610392faa08ead660dc8473ed2ceb708",
-      "bytes": 2727620,
+      "bytes": 2727656,
       "files": {
         "artifacts/appendix_cd/Figure9_cutoff_sensitivity.pdf": "b01e5197db677299f1f9a44861a932b1d4351aad5c23f04d67f9232d5e92f933",
         "artifacts/appendix_cd/cutoff_sensitivity_FCP_PCP_combined.csv": "36bbd75752da7e81179e5eea8b3771201ea0542e5deff1ee7486b72b45753e20",
@@ -8339,7 +8339,7 @@
     "figure10": {
       "file": "bundles/figure10.tar.gz",
       "sha256": "8099cf0a97f2927bf3235eaf988e3743d7eded7f8dc5eac1d7ef5e2def085e01",
-      "bytes": 2677951,
+      "bytes": 2677864,
       "files": {
         "artifacts/appendix_cd/Figure10_K_sensitivity.pdf": "441bb37f6ce4a618a4cb18af62d0d759bbb6c3f62f0ab522f4bf89975cebde53",
         "artifacts/appendix_cd/justify_K_all_results_long.csv": "43b7ba08a86fcc602708d387155117087a3862146fd9f53165085e9edf002466",
