@@ -21,15 +21,14 @@ end-to-end retraining equivalence where that was not established.
    600-second per-solve limit. All non-runtime fields are bit-identical.
 7. Figure 11's 60 per-instance translation vectors and paths reproduce `489/522`.
    Its exact solver sources and checkpoint are SHA-256 guarded.
-8. Table 5 contains 120 FCP/BSP sweep rows: two scales, three cost regimes, five
-   seeds, two methods and fixed/buggy Z variants. The fixed-method InS/OOS
-   averages reproduce 24 paper statistics, which decide acceptance. CPBSD-A was
-   rerun independently under the protocol the paper states (MIPGap 1e-3, 300 s,
-   8 threads, 30 cells); the published CPBSD-A values are retained and the rerun
-   means are recorded in `provenance/PUBLISHED_VALUES.json` under
-   `table5_cpbsd_a_rerun`. The in-sample optimum is well determined, the optimal
-   price vector is not, so the out-of-sample profit depends on which optimum the
-   solver returns and is reproducible only under the same solver configuration.
+8. Table 5 contains 120 FCP/BSP sweep rows and 30 CPBSD-A cells: two scales,
+   three cost regimes, five seeds. FCP/BSP use fixed/buggy Z variants; CPBSD-A was
+   rerun under the protocol the paper states (MIPGap 1e-3, 300 s, 8 threads). The
+   fixed-method InS/OOS averages reproduce 36 paper statistics. The CPBSD-A values
+   this rerun replaced are kept in `provenance/PUBLISHED_VALUES.json` under
+   `table5_cpbsd_a_rerun`. N=30 CPBSD-A cells reach the 300-second limit, and the
+   in-sample optimum is well determined while the optimal price vector is not, so
+   the out-of-sample profit is reproducible only under the same solver configuration.
 
 `scripts/verify_reference_results.py` audits the released files. Passing this
 command does not mean it just retrained a model or solved a MILP. Actual replay

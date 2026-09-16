@@ -1,6 +1,6 @@
 # Table 5 — Additive random-valuation experiment with corrected Z lower bound
 
-Corrected FCP/BSP random-valuation sweep; 24 InS/OOS statistics, plus a recorded CPBSD-A rerun.
+Corrected FCP/BSP random-valuation sweep and CPBSD-A rerun; 36 InS/OOS statistics.
 
 ```bash
 uv run python scripts/reproduce.py prepare table5
