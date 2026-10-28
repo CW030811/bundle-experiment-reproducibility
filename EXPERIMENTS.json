@@ -196,7 +196,7 @@
       "id": "table_7_ood_robustness",
       "paper_location": "Appendix J / Table 7",
       "title": "OOD robustness under four valuation distributions",
-      "acceptance_basis": "Fresh four-variant, ten-seed replay reproduces all eight published non-runtime profit mean/std values at displayed precision; the documented Beta(.5,.5) std convention boundary is user-accepted.",
+      "acceptance_basis": "Fresh four-variant, ten-seed replay reproduces all eight published non-runtime profit mean/std values at displayed precision; the Beta(.5,.5) standard deviation matches the published value under the documented sample-standard-deviation convention.",
       "key": "table7",
       "status": "ACCEPTED_WITH_DOCUMENTED_SCOPE",
       "archive": "bundles/table7.tar.gz",

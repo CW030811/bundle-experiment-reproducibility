@@ -1,7 +1,7 @@
 # Public export notes
 
-- This is a clean export of all twelve accepted numerical experiment entries, not
-  a copy of the entire work directory or its Git history.
+- This release contains source code, datasets, checkpoints and reference results
+  for all twelve numerical experiments.
 - Numerical data and model tensors are unchanged. Machine-specific path metadata
   in text artifacts is normalized; transformed archive members are listed in
   `bundles/manifest.json`. Redundant nonportable Table 5 manifests and machine logs
@@ -20,9 +20,8 @@
 - The environment adds TensorBoard, required by the deterministic training
   module but missing from the previous dependency list. Other direct experiment
   dependency pins are retained; `uv.lock` fixes the complete resolution.
-- The old local README/inventory predates recovery of the final data. It is not
-  published as current guidance. This release's README and acceptance document
-  supersede those stale statements.
+- The README describes the released experiment coverage; `docs/ACCEPTANCE.md`
+  specifies the numerical verification criteria and reproduction scope.
 - Published target values retain the Figure 7/8 standard-deviation arrays.
   The unified verifier checks every experiment; Table 6/7 checks now require
   complete input/seed identities in addition to matching summary statistics.

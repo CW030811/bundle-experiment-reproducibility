@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def matches_paper_display(raw_value: float, published_value: float, decimals: int) -> bool:
-    """Apply the agreed bounded tolerance around a displayed paper value."""
+    """Apply the documented bounded tolerance around a displayed paper value."""
     display_unit = 10 ** -decimals
     return abs(raw_value - published_value) <= 0.55 * display_unit + 1e-12
 

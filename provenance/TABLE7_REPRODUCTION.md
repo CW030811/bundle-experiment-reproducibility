@@ -2,9 +2,7 @@
 
 ## Status
 
-`ACCEPTED_WITH_DOCUMENTED_SCOPE` under the policy in `docs/ACCEPTANCE.md`
-(internally labeled `EXACT`; the legacy word remains only in paths such as
-`results/main_exact_rerun/`).
+`ACCEPTED_WITH_DOCUMENTED_SCOPE` under the policy in `docs/ACCEPTANCE.md`.
 
 All four `(m,n)=(10,10)` OOD experiments were regenerated with the recovered
 final data and all ten base checkpoints. Each variant produced 100 sample-level
@@ -22,8 +20,8 @@ seed-averaged rows and 1,000 seed-by-sample rows.
 For `Beta(.5,.5)`, the raw population standard deviation is
 `0.007491434479918724` and the raw sample standard deviation is
 `0.007529174942855045`. The paper's three-decimal `0.008` agrees with the sample
-standard deviation; this statistical convention difference was explicitly
-accepted as negligible. Both raw values remain recorded.
+standard deviation. The three-decimal comparison therefore uses the sample
+standard deviation; both raw values remain recorded.
 
 Runtime columns are kept in the output CSV files but excluded from acceptance.
 

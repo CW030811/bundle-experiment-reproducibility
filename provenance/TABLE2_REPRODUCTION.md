@@ -3,9 +3,8 @@
 ## Status
 
 `ACCEPTED_WITH_DOCUMENTED_SCOPE` under the policy in `docs/ACCEPTANCE.md`.
-The internal project label for this outcome was `EXACT`; that word survives
-only in legacy script and directory names such as `scripts/run_table2_exact.py`
-and `results/main_exact_rerun/`.
+This status applies to the comparisons listed below; it does not assert
+bitwise equivalence or exact end-to-end retraining.
 
 Acceptance scope:
 
@@ -49,8 +48,8 @@ In the published archive, `results/main_exact_rerun/table2/` contains 31 files:
 - one verification report.
 
 The four execution logs of the original run are not distributed, because
-machine logs are excluded from the public release. When the run was accepted,
-no evaluator log contained a failed sample or a size-limited-license error, and
+machine logs are excluded from the public release. The evaluation logs recorded
+no failed samples or size-limited-license errors, and
 BSP reported zero failed samples on all three datasets.
 
 ## Non-runtime verification

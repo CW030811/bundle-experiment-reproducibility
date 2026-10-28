@@ -2,9 +2,7 @@
 
 ## Status
 
-`ACCEPTED_WITH_DOCUMENTED_SCOPE` under the policy in `docs/ACCEPTANCE.md`
-(internally labeled `EXACT`; the legacy word remains only in paths such as
-`results/main_exact_rerun/`).
+`ACCEPTED_WITH_DOCUMENTED_SCOPE` under the policy in `docs/ACCEPTANCE.md`.
 
 Table 6 was regenerated from the recovered final `(m,n)=(10,10)` data and the
 ten `correct_lr_3` checkpoints. Runtime fields are kept in the CSV files but are

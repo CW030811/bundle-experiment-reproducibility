@@ -1,8 +1,8 @@
 # Reproduction scope and acceptance policy
 
-The local project calls accepted entries `EXACT`. This public
-release uses `ACCEPTED_WITH_DOCUMENTED_SCOPE` to avoid implying bitwise,
-end-to-end retraining equivalence where that was not established.
+The status `ACCEPTED_WITH_DOCUMENTED_SCOPE` indicates that an experiment
+satisfies the numerical checks specified below. It does not establish
+bitwise equivalence or exact end-to-end retraining.
 
 1. Runtime, runtime ratios, and machine-dependent timing columns are not acceptance targets.
 2. Table 2 checks each final ten-seed/sample aggregation (BSP is seed-independent).

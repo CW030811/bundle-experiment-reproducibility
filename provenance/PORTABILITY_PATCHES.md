@@ -1,6 +1,6 @@
 # Portability patches to the final sources
 
-`src/deterministic/` is exported from the final internal `Bundle_code/` sources.
+`src/deterministic/` is based on the final `Bundle_code/` sources.
 The following compatibility changes let those sources run in the pinned
 PyTorch 2.8 / PyG 2.6 environment. None of them changes an experiment algorithm.
 
